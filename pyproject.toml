@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "mv-organizer"
+version = "0.1.0"
+description = "movie organizer app"
+authors = ["y"]
+readme = "README.md"
+packages = [{include = "mv_organizer"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fastapi = "^0.81.0"
+uvicorn = "^0.18.3"
+PyYAML = "^6.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
