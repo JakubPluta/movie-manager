@@ -1,10 +1,12 @@
 import React from "react";
+import Container from "./components/Container";
+import MainPage from "./pages/MainPage";
 
 function App() {
   return (
-    <div>
-      <h2 className="text-3xl">Hello, Tailwind!</h2>;
-    </div>
+    <Container>
+      <MainPage />
+    </Container>
   );
 }
 
