@@ -21,11 +21,7 @@ export default (state: StateType, action: ActionType) => {
       movieStudios: [...state.movieStudios, action.payload]
     }
 
-    case Actions.SetSelectedMovieId:
-      return {
-        ...state,
-        selectedMovieId: action.payload,
-      };
+
     default:
       return state;
   }

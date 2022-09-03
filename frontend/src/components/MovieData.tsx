@@ -1,40 +1,62 @@
 import React from "react";
 import MovieSection from "./MovieSection";
 import MovieDataFormRow from "./MovieDataFormRow";
+import { MovieSectionProps } from "../types/form";
+import StateContext from "../state/StateContext";
+import { useContext } from "react"
+import { Field } from "formik";
 
-const MovieData = () => {
+const MovieData = ({ formik }: MovieSectionProps) => {
+  const { state } = useContext(StateContext);
+
   return (
     <MovieSection title="Movie Data">
       <div className="h-64">
-        <form>
+        <form onSubmit={formik.handleSubmit}>
           <fieldset>
             <div>
               <MovieDataFormRow title="Name">
-                <input className="movie-data-input" type="text" />
+                <Field
+                  className="movie-data-input"
+                  type="text"
+                  name="movieName"
+                />
               </MovieDataFormRow>
 
               <MovieDataFormRow title="Studio">
-                <select className="py-1 rounded-lg w-full">
-                  <option>Studio 1</option>
-                  <option>Studio 2</option>
-                  <option>Studio 3</option>
-                  <option>Studio 4</option>
-                  <option>Studio 5</option>
+                <select
+                  className="py-1 rounded-lg w-full"
+                  {...formik.getFieldProps("movieStudioId")}
+                >
+                  <option value="">None</option>
+                  {state?.movieStudios.map((studio, index) => (
+                    <option key={index} value={index}>
+                      {studio}
+                    </option>
+                  ))}
                 </select>
               </MovieDataFormRow>
 
               <MovieDataFormRow title="Series">
-                <select className="py-1 rounded-lg w-full">
-                  <option>Series 1</option>
-                  <option>Series 2</option>
-                  <option>Series 3</option>
-                  <option>Series 4</option>
-                  <option>Series 5</option>
+                <select
+                  className="py-1 rounded-lg w-full"
+                  {...formik.getFieldProps("movieSeriesId")}
+                >
+                  <option value="">None</option>
+                  {state?.movieSeries.map((series, index) => (
+                    <option key={index} value={index}>
+                      {series}
+                    </option>
+                  ))}
                 </select>
               </MovieDataFormRow>
 
               <MovieDataFormRow title="Series #">
-                <input className="movie-data-input" type="text" />
+                <Field
+                  className="movie-data-input"
+                  type="text"
+                  name="movieSeriesNumber"
+                />
               </MovieDataFormRow>
 
               <div className="flex my-4">
@@ -61,3 +83,5 @@ const MovieData = () => {
 };
 
 export default MovieData;
+
+

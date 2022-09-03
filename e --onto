@@ -1,0 +1,17 @@
+[33mcommit e182a1ce3c9f9fd01fc3332fd495388644b620d3[m
+Author: jp <jakub.pluta@cdq.com>
+Date:   Thu Sep 1 10:42:26 2022 +0200
+
+    add frontend boilerplate
+
+[33mcommit b8412d968bfe5244266b8efee7afe91eff604ece[m
+Author: jp <jakub.pluta@cdq.com>
+Date:   Thu Sep 1 14:35:45 2022 +0200
+
+    add frontend components and main page
+
+[33mcommit b0f0ce028fda1c28e2c872db72bb08e02cd5d36f[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;32mnew_branch[m[33m, [m[1;32mmaster[m[33m)[m
+Author: jakubpluta <plutakuba@gmail.com>
+Date:   Sat Sep 3 17:39:20 2022 +0200
+
+    Frontend - added movie, actor, studios componentsducer
