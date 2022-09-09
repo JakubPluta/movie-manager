@@ -11,6 +11,8 @@ python = "^3.9"
 fastapi = "^0.81.0"
 uvicorn = "^0.18.3"
 PyYAML = "^6.0"
+SQLAlchemy = "^1.4.40"
+black = "^22.8.0"
 
 
 [build-system]

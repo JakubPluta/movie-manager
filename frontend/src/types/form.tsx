@@ -14,3 +14,8 @@ export interface MainPageFormValuesType {
 export interface MovieSectionProps {
   formik: FormikProps<MainPageFormValuesType>;
 }
+
+export interface AdminFormValuesType {
+  name: string;
+  selection: "actor" | "category" | "series" | "studio";
+}

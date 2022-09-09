@@ -1,40 +1,61 @@
 export interface StateType {
-  actors: string[];
-  categories: string[];
-  movieSeries: string[];
-  movieStudios: string[];
-  movies: string[];
+  actors: ActorType[];
+  categories: CategoryType[];
+  series: SeriesType[];
+  studios: StudioType[];
+  movies: MovieFileType[];
 }
 
+export interface MovieFileType {
+  id: number;
+  filename: string;
+}
+
+export interface MovieDataBaseType {
+  id: number;
+  name: string;
+}
+
+export interface ActorType extends MovieDataBaseType {}
+export interface CategoryType extends MovieDataBaseType {}
+export interface SeriesType extends MovieDataBaseType {}
+export interface StudioType extends MovieDataBaseType {}
 
 export type ActionType =
-  | AddActorAction
-  | AddCategoryAction
-  | AddSeriesAction
-  | AddStudioAction;
+  | SetAvailableActorsAction
+  | SetCategoriesAction
+  | SetMoviesAction
+  | SetSeriesAction
+  | SetStudiosAction;
 
 export enum Actions {
-  AddActor,
-  AddCategory,
-  AddSeries,
-  AddStudio,
+  SetAvailableActors,
+  SetCategories,
+  SetMovies,
+  SetSeries,
+  SetStudios,
 }
 
-export interface AddActorAction {
-  type: Actions.AddActor;
-  payload: string;
+export interface SetAvailableActorsAction {
+  type: Actions.SetAvailableActors;
+  payload: ActorType[];
 }
 
-export interface AddCategoryAction {
-  type: Actions.AddCategory;
-  payload: string;
+export interface SetCategoriesAction {
+  type: Actions.SetCategories;
+  payload: CategoryType[];
+}
+export interface SetMoviesAction {
+  type: Actions.SetMovies;
+  payload: MovieFileType[];
 }
 
-export interface AddSeriesAction {
-  type: Actions.AddSeries;
-  payload: string;
+export interface SetSeriesAction {
+  type: Actions.SetSeries;
+  payload: SeriesType[];
 }
-export interface AddStudioAction {
-  type: Actions.AddStudio;
-  payload: string;
+
+export interface SetStudiosAction {
+  type: Actions.SetStudios;
+  payload: StudioType[];
 }

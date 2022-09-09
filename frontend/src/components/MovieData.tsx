@@ -3,7 +3,7 @@ import MovieSection from "./MovieSection";
 import MovieDataFormRow from "./MovieDataFormRow";
 import { MovieSectionProps } from "../types/form";
 import StateContext from "../state/StateContext";
-import { useContext } from "react"
+import { useContext } from "react";
 import { Field } from "formik";
 
 const MovieData = ({ formik }: MovieSectionProps) => {
@@ -29,9 +29,9 @@ const MovieData = ({ formik }: MovieSectionProps) => {
                   {...formik.getFieldProps("movieStudioId")}
                 >
                   <option value="">None</option>
-                  {state?.movieStudios.map((studio, index) => (
+                  {state?.studios.map((studio, index) => (
                     <option key={index} value={index}>
-                      {studio}
+                      {studio.name}
                     </option>
                   ))}
                 </select>
@@ -43,9 +43,9 @@ const MovieData = ({ formik }: MovieSectionProps) => {
                   {...formik.getFieldProps("movieSeriesId")}
                 >
                   <option value="">None</option>
-                  {state?.movieSeries.map((series, index) => (
+                  {state?.series.map((series, index) => (
                     <option key={index} value={index}>
-                      {series}
+                      {series.name}
                     </option>
                   ))}
                 </select>
@@ -83,5 +83,3 @@ const MovieData = ({ formik }: MovieSectionProps) => {
 };
 
 export default MovieData;
-
-

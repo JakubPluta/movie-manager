@@ -9,6 +9,11 @@ class MovieData(BaseModel):
     class Config:
         orm_mode = True
 
+
+class MovieProperty(BaseModel):
+    name: str
+
+
 class Actor(MovieData):
     pass
 
@@ -25,10 +30,16 @@ class Studio(MovieData):
     pass
 
 
-
 class MovieBase(BaseModel):
     id: int
-    filename: str 
+    filename: str
+
+    class Config:
+        orm_mode = True
+
+
+class MovieFile(MovieBase):
+    pass
 
 
 class Movie(MovieBase):
@@ -41,3 +52,11 @@ class Movie(MovieBase):
 
     class Config:
         orm_mode = True
+
+
+class HTTPExceptionMessage(BaseModel):
+    message: str
+
+
+class HTTPExceptionSchema(BaseModel):
+    detail: HTTPExceptionMessage

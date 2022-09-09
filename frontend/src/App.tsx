@@ -4,7 +4,7 @@ import Container from "./components/Container";
 import AdminPage from "./pages/AdminPage";
 import MainPage from "./pages/MainPage";
 import { initialState } from "./state/initialState";
-import reducer from "./state/reducer";
+import { reducer } from "./state/reducer";
 import StateContext from "./state/StateContext";
 import NavBar from "./components/NavBar";
 
@@ -13,16 +13,20 @@ function App() {
 
   return (
     <BrowserRouter>
-    <StateContext.Provider value={{ state, dispatch }}>
+      <StateContext.Provider value={{ state, dispatch }}>
         <Container>
           <NavBar />
           <Routes>
+            <Route
+              path="*"
+              element={<h2 className="text-center text-2xl">404 Not Found</h2>}
+            />
             <Route path="/" element={<MainPage />} />
             <Route path="/admin" element={<AdminPage />} />
-            </Routes>
-      </Container>
+          </Routes>
+        </Container>
       </StateContext.Provider>
-      </BrowserRouter>
+    </BrowserRouter>
   );
 }
 
