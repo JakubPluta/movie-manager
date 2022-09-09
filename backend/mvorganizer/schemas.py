@@ -60,3 +60,10 @@ class HTTPExceptionMessage(BaseModel):
 
 class HTTPExceptionSchema(BaseModel):
     detail: HTTPExceptionMessage
+
+
+class MovieUpdateSchema(BaseModel):
+    name: Optional[str] = None
+    series_id: Optional[int] = None
+    series_number: Optional[int] = None
+    studio_id: Optional[int] = None
