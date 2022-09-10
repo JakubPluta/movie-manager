@@ -40,6 +40,23 @@ def get_all_movies(db: Session = Depends(get_db)):
     return crud.get_all_movies(db)
 
 
+@app.get(
+    "/movies/{movie_id}",
+    response_model=schemas.Movie,
+    responses={
+        404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"}
+    },
+)
+def get_movie(movie_id: int, db: Session = Depends(get_db)):
+    movie = crud.get_movie_by_id(db, movie_id)
+    if movie is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail={"message": f"Movie with id {movie_id} does not exist"},
+        )
+    return movie
+
+
 @app.post(
     "/movies",
     response_model=List[schemas.Movie],
@@ -66,6 +83,26 @@ def import_movies(db: Session = Depends(get_db)):
     return movies
 
 
+@app.put(
+    "/movies/{id}",
+    response_model=schemas.Movie,
+    responses={
+        404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"}
+    },
+)
+def update_movie(
+    id: int, data: schemas.MovieUpdateSchema, db: Session = Depends(get_db)
+):
+    movie = crud.update_movie(db, id, data)
+    if movie is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail={"message": f"Movie with id {id} does not exist"},
+        )
+
+    return movie
+
+
 @app.post(
     "/actors",
     response_model=schemas.Actor,
@@ -76,7 +113,7 @@ def import_movies(db: Session = Depends(get_db)):
         }
     },
 )
-def add_actor(data: schemas.MovieProperty, db: Session = Depends(get_db)):
+def add_actor(data: schemas.MoviePropertySchema, db: Session = Depends(get_db)):
     actor = crud.add_actor(db, data.name)
     if actor is None:
         raise HTTPException(
@@ -147,7 +184,7 @@ def get_category_by_name(name: str, db: Session = Depends(get_db)):
         409: {"model": schemas.HTTPExceptionSchema, "description": "Duplicate Category"}
     },
 )
-def add_category(data: schemas.MovieProperty, db: Session = Depends(get_db)):
+def add_category(data: schemas.MoviePropertySchema, db: Session = Depends(get_db)):
     category = crud.add_category(db, data.name)
     if category is None:
         raise HTTPException(
@@ -169,7 +206,7 @@ def get_all_studios(db: Session = Depends(get_db)):
         409: {"model": schemas.HTTPExceptionSchema, "description": "Duplicate Studio"}
     },
 )
-def add_studio(data: schemas.MovieProperty, db: Session = Depends(get_db)):
+def add_studio(data: schemas.MoviePropertySchema, db: Session = Depends(get_db)):
     studio = crud.add_studio(db, data.name)
     if studio is None:
         raise HTTPException(
@@ -191,7 +228,7 @@ def get_all_series(db: Session = Depends(get_db)):
         409: {"model": schemas.HTTPExceptionSchema, "description": "Duplicate Series"}
     },
 )
-def add_series(data: schemas.MovieProperty, db: Session = Depends(get_db)):
+def add_series(data: schemas.MoviePropertySchema, db: Session = Depends(get_db)):
     series = crud.add_series(db, data.name)
     if series is None:
         raise HTTPException(
@@ -199,3 +236,109 @@ def add_series(data: schemas.MovieProperty, db: Session = Depends(get_db)):
             detail={"message": f"series {data.name} already in database"},
         )
     return series
+
+
+@app.delete("/movies/{movie_id}")
+def delete_movie(id: int, db: Session = Depends(get_db)):
+    movie = crud.get_movie_by_id(db, id)
+    if movie is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail={"message": f"movie with id {id} doest not exist in database"},
+        )
+
+    deleted_movie = crud.delete_movie(db, id)
+    if deleted_movie is None:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            detail={
+                "message": f"Something went wrong. Couldn't delete movie {movie.name} with id {id}"
+            },
+        )
+    return {"message": f"movie with {id} deleted"}
+
+
+@app.post(
+    "/movie_category",
+    response_model=schemas.Movie,
+    responses={
+        404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"}
+    },
+)
+def add_movie_category(movie_id: int, category_id: int, db: Session = Depends(get_db)):
+    movie = crud.add_movie_category(db, movie_id, category_id)
+
+    if movie is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail={
+                "message": f"Movie ID {movie_id} or Category ID {category_id} does not exist"
+            },
+        )
+
+    return movie
+
+
+@app.delete(
+    "/movie_category",
+    response_model=schemas.Movie,
+    responses={
+        404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"}
+    },
+)
+def delete_movie_category(
+    movie_id: int, category_id: int, db: Session = Depends(get_db)
+):
+    movie = crud.delete_movie_category(db, movie_id, category_id)
+
+    if movie is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail={
+                "message": f"Movie ID {movie_id} or Category ID {category_id} does not exist"
+            },
+        )
+
+    return movie
+
+
+@app.post(
+    "/movie_actor",
+    response_model=schemas.Movie,
+    responses={
+        404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"}
+    },
+)
+def add_movie_actor(movie_id: int, actor_id: int, db: Session = Depends(get_db)):
+    movie = crud.add_movie_actor(db, movie_id, actor_id)
+
+    if movie is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail={
+                "message": f"Movie ID {movie_id} or Actor ID {actor_id} does not exist"
+            },
+        )
+
+    return movie
+
+
+@app.delete(
+    "/movie_actor",
+    response_model=schemas.Movie,
+    responses={
+        404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"}
+    },
+)
+def delete_movie_actor(movie_id: int, actor_id: int, db: Session = Depends(get_db)):
+    movie = crud.delete_movie_actor(db, movie_id, actor_id)
+
+    if movie is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            detail={
+                "message": f"Movie ID {movie_id} or Actor ID {actor_id} does not exist"
+            },
+        )
+
+    return movie

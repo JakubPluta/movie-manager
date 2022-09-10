@@ -1,43 +1,53 @@
+// Reducer State
 export interface StateType {
-  actors: ActorType[];
+  actorsAvailable: ActorType[];
+  actorsSelected: ActorType[];
   categories: CategoryType[];
   series: SeriesType[];
   studios: StudioType[];
   movies: MovieFileType[];
 }
 
+export interface BaseMovieProperty {
+  id: number;
+  name: string;
+}
+
+export interface ActorType extends BaseMovieProperty {}
+export interface CategoryType extends BaseMovieProperty {}
+export interface SeriesType extends BaseMovieProperty {}
+export interface StudioType extends BaseMovieProperty {}
+
 export interface MovieFileType {
   id: number;
   filename: string;
 }
 
-export interface MovieDataBaseType {
-  id: number;
-  name: string;
-}
-
-export interface ActorType extends MovieDataBaseType {}
-export interface CategoryType extends MovieDataBaseType {}
-export interface SeriesType extends MovieDataBaseType {}
-export interface StudioType extends MovieDataBaseType {}
-
+// Reducer Actions
 export type ActionType =
-  | SetAvailableActorsAction
+  | SetActorsAvailableAction
+  | SetActorsSelectedAction
   | SetCategoriesAction
   | SetMoviesAction
   | SetSeriesAction
   | SetStudiosAction;
 
 export enum Actions {
-  SetAvailableActors,
+  SetActorsAvailable,
+  SetActorsSelected,
   SetCategories,
   SetMovies,
   SetSeries,
   SetStudios,
 }
 
-export interface SetAvailableActorsAction {
-  type: Actions.SetAvailableActors;
+export interface SetActorsAvailableAction {
+  type: Actions.SetActorsAvailable;
+  payload: ActorType[];
+}
+
+export interface SetActorsSelectedAction {
+  type: Actions.SetActorsSelected;
   payload: ActorType[];
 }
 

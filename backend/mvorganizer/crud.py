@@ -102,6 +102,18 @@ def get_movie_by_name(db: Session, name: str) -> models.Movie:
     )
 
 
+def delete_movie(db: Session, movie: models.Movie) -> models.Movie:
+    try:
+        db.delete(movie)
+        db.commit()
+        db.refresh(movie)
+    except Exception as e:
+        logger.error(f"Couldn't delete movie {movie}. Doing rollback")
+        db.rollback()
+        return None
+    return movie
+
+
 def add_actor(db: Session, name: str) -> models.Actor:
     actor = models.Actor(name=name)
 
@@ -117,7 +129,7 @@ def add_actor(db: Session, name: str) -> models.Actor:
     return actor
 
 
-def get_actor_by_id(id: int, db: Session) -> models.Actor:
+def get_actor_by_id(db: Session, id: int) -> models.Actor:
     return db.query(models.Actor).filter(models.Actor.id == id).first()
 
 
@@ -200,16 +212,75 @@ def get_category_by_name(db: Session, name: str) -> Optional[models.Category]:
     )
 
 
-def add_category(db: Session, name: str) -> models.Category:
+def add_category(
+    db: Session,
+    name: str,
+) -> models.Category:
     category = models.Category(name=name)
 
     try:
         db.add(category)
         db.commit()
         db.refresh(category)
-    except Exception as e:
-        logger.error(f"SqlAlchemy exception {str(e)}. Doing rollback")
+    except IntegrityError:
         db.rollback()
-        return
+        return None
 
     return category
+
+
+def add_movie_category(db: Session, movie_id: int, category_id: int) -> models.Movie:
+    movie = get_movie_by_id(db, movie_id)
+    category = get_category(db, category_id)
+    logger.info(f">>>>>>>>>>>>>>>>>>>>>>>>> {movie}{category}")
+    if movie is None or category is None:
+        return None
+
+    movie.categories.append(category)
+    db.commit()
+    db.refresh(movie)
+
+    return movie
+
+
+def delete_movie_category(db: Session, movie_id: int, category_id: int) -> models.Movie:
+    movie = get_movie_by_id(db, movie_id)
+    category = get_category(db, category_id)
+
+    if movie is None or category is None:
+        return None
+    if category in movie.categories:
+        movie.categories.remove(category)
+    db.commit()
+    db.refresh(movie)
+
+    return movie
+
+
+def add_movie_actor(db: Session, movie_id: int, actor_id: int) -> models.Movie:
+    movie = get_movie_by_id(db, movie_id)
+    actor = get_actor_by_id(db, actor_id)
+
+    if movie is None or actor is None:
+        return None
+
+    movie.actors.append(actor)
+    db.commit()
+    db.refresh(movie)
+
+    return movie
+
+
+def delete_movie_actor(db: Session, movie_id: int, actor_id: int) -> models.Movie:
+    movie = get_movie_by_id(db, movie_id)
+    actor = get_actor_by_id(db, actor_id)
+
+    if movie is None or actor is None:
+        return None
+
+    if actor in movie.actors:
+        movie.actors.remove(actor)
+        db.commit()
+        db.refresh(movie)
+
+    return movie

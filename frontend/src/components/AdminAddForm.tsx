@@ -66,7 +66,7 @@ const AdminAddForm = () => {
         break;
 
       default:
-        console.error("You should not be seeing this...");
+        console.error("something went wrong");
         break;
     }
 

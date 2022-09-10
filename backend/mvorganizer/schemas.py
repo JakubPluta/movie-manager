@@ -2,35 +2,7 @@ from pydantic import BaseModel
 from typing import Optional, List, Any
 
 
-class MovieData(BaseModel):
-    id: int
-    name: str
-
-    class Config:
-        orm_mode = True
-
-
-class MovieProperty(BaseModel):
-    name: str
-
-
-class Actor(MovieData):
-    pass
-
-
-class Category(MovieData):
-    pass
-
-
-class Series(MovieData):
-    pass
-
-
-class Studio(MovieData):
-    pass
-
-
-class MovieBase(BaseModel):
+class BaseMovie(BaseModel):
     id: int
     filename: str
 
@@ -38,11 +10,39 @@ class MovieBase(BaseModel):
         orm_mode = True
 
 
-class MovieFile(MovieBase):
+class BaseMovieProperty(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        orm_mode = True
+
+
+class Actor(BaseMovieProperty):
     pass
 
 
-class Movie(MovieBase):
+class Category(BaseMovieProperty):
+    pass
+
+
+class Series(BaseMovieProperty):
+    pass
+
+
+class Studio(BaseMovieProperty):
+    pass
+
+
+class MovieFile(BaseMovie):
+    pass
+
+
+class MoviePropertySchema(BaseModel):
+    name: str
+
+
+class Movie(BaseMovie):
     name: Optional[str] = None
     actors: Optional[List[Actor]] = None
     categories: Optional[List[Category]] = None
@@ -54,16 +54,16 @@ class Movie(MovieBase):
         orm_mode = True
 
 
+class MovieUpdateSchema(BaseModel):
+    name: Optional[str] = None
+    series_id: Optional[int] = None
+    series_number: Optional[int] = None
+    studio_id: Optional[int] = None
+
+
 class HTTPExceptionMessage(BaseModel):
     message: str
 
 
 class HTTPExceptionSchema(BaseModel):
     detail: HTTPExceptionMessage
-
-
-class MovieUpdateSchema(BaseModel):
-    name: Optional[str] = None
-    series_id: Optional[int] = None
-    series_number: Optional[int] = None
-    studio_id: Optional[int] = None

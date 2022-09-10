@@ -1,8 +1,11 @@
-import React, { useContext, useEffect, useState } from "react";
-import StateContext from "../state/StateContext";
-import { MainPageFormValuesType } from "../types/form";
+import { useContext, useEffect, useState } from "react";
+
+import Loading from "./Loading";
 import MovieSection from "./MovieSection";
-import { FormikProps } from "formik";
+
+import StateContext from "../state/StateContext";
+
+import { MovieInfoResponseType } from "../types/api";
 import { MovieSectionProps } from "../types/form";
 import { Actions } from "../types/state";
 
@@ -12,30 +15,64 @@ const MovieList = ({ formik }: MovieSectionProps) => {
 
   useEffect(() => {
     (async () => {
-      const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_URI}/movies`
-      );
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URI}/movies`);
       const data = await response.json();
+
       dispatch({
         type: Actions.SetMovies,
         payload: data,
       });
 
-      // await new Promise((resolve) => setTimeout(resolve, 300));
-
       setLoading(false);
     })();
-  }, []);
+  }, [dispatch]);
+
+  useEffect(() => {
+    (async () => {
+      if (formik.values.movieId) {
+        const id = +formik.values.movieId;
+
+        const response = await fetch(
+          `${process.env.REACT_APP_BACKEND_URI}/movies/${id}`
+        );
+        const data: MovieInfoResponseType = await response.json();
+        console.log(data)
+        if (response.ok) {
+
+          formik.setValues({
+            ...formik.values,
+            movieName: data.name ?? "",
+            movieSeriesId: data.series ? data.series.id.toString() : "",
+            movieSeriesNumber: data.series_number
+              ? data.series_number.toString()
+              : "",
+            movieStudioId: data.studio ? data.studio.id.toString() : "",
+            movieCategories: data.categories.map((category) =>
+              category.id.toString()
+            ),
+          });
+
+          dispatch({
+            type: Actions.SetActorsSelected,
+            payload: data.actors,
+          });
+        }
+      }
+    })();
+  }, [dispatch, formik.values.movieId]);
 
   return (
     <MovieSection title="Movie List">
       {loading ? (
-        <h2>Loading....</h2>
+        <div className="h-64">
+          <Loading />
+        </div>
       ) : (
         <select
           className="h-64 w-full"
           size={10}
-          {...formik.getFieldProps("movieId")}
+          name="movieId"
+          onChange={formik.handleChange}
         >
           {state?.movies.map((movie) => (
             <option key={movie.id} value={movie.id}>

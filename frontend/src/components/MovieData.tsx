@@ -1,13 +1,39 @@
-import React from "react";
-import MovieSection from "./MovieSection";
-import MovieDataFormRow from "./MovieDataFormRow";
-import { MovieSectionProps } from "../types/form";
-import StateContext from "../state/StateContext";
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Field } from "formik";
 
+import Loading from "./Loading";
+import MovieDataFormRow from "./MovieDataFormRow";
+import MovieSection from "./MovieSection";
+
+import StateContext from "../state/StateContext";
+
+import { MovieSectionProps } from "../types/form";
+import { Actions } from "../types/state";
+
 const MovieData = ({ formik }: MovieSectionProps) => {
-  const { state } = useContext(StateContext);
+  const [loading, setLoading] = useState(true);
+  const { state, dispatch } = useContext(StateContext);
+
+  useEffect(() => {
+    (async () => {
+      const helper = async (endpoint: string, type: Actions) => {
+        const response = await fetch(
+          `${process.env.REACT_APP_BACKEND_URI}/${endpoint}`
+        );
+        const payload = await response.json();
+
+        dispatch({
+          type,
+          payload,
+        });
+      };
+
+      await helper("series", Actions.SetSeries);
+      await helper("studios", Actions.SetStudios);
+
+      setLoading(false);
+    })();
+  }, [dispatch]);
 
   return (
     <MovieSection title="Movie Data">
@@ -24,31 +50,39 @@ const MovieData = ({ formik }: MovieSectionProps) => {
               </MovieDataFormRow>
 
               <MovieDataFormRow title="Studio">
-                <select
-                  className="py-1 rounded-lg w-full"
-                  {...formik.getFieldProps("movieStudioId")}
-                >
-                  <option value="">None</option>
-                  {state?.studios.map((studio, index) => (
-                    <option key={index} value={index}>
-                      {studio.name}
-                    </option>
-                  ))}
-                </select>
+                {loading ? (
+                  <Loading />
+                ) : (
+                  <select
+                    className="py-1 rounded-lg w-full"
+                    {...formik.getFieldProps("movieStudioId")}
+                  >
+                    <option value="">None</option>
+                    {state?.studios.map((studio) => (
+                      <option key={studio.id} value={studio.id}>
+                        {studio.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </MovieDataFormRow>
 
               <MovieDataFormRow title="Series">
-                <select
-                  className="py-1 rounded-lg w-full"
-                  {...formik.getFieldProps("movieSeriesId")}
-                >
-                  <option value="">None</option>
-                  {state?.series.map((series, index) => (
-                    <option key={index} value={index}>
-                      {series.name}
-                    </option>
-                  ))}
-                </select>
+                {loading ? (
+                  <Loading />
+                ) : (
+                  <select
+                    className="py-1 rounded-lg w-full"
+                    {...formik.getFieldProps("movieSeriesId")}
+                  >
+                    <option value="">None</option>
+                    {state?.series.map((series) => (
+                      <option key={series.id} value={series.id}>
+                        {series.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </MovieDataFormRow>
 
               <MovieDataFormRow title="Series #">
