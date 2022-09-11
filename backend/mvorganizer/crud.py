@@ -1,5 +1,4 @@
 from sqlite3 import IntegrityError
-from unicodedata import category
 from sqlalchemy.orm import Session
 from typing import Optional, List
 
@@ -54,7 +53,6 @@ def update_movie(db: Session, id: int, data: schemas.MovieUpdateSchema) -> model
     movie = get_movie_by_id(db, id)
     if movie is None:
         return None
-
     if all(
         [
             data.name == movie.name,
@@ -65,14 +63,62 @@ def update_movie(db: Session, id: int, data: schemas.MovieUpdateSchema) -> model
     ):
         return movie
 
+    if movie.series_id != data.series_id:
+        series_current = (
+            get_series(db, movie.series_id).name
+            if movie.series_id is not None
+            else None
+        )
+        series_new = (
+            get_series(db, data.series_id).name if data.series_id is not None else None
+        )
+
+        if data.series_id is None:
+            utils.update_series_link(movie.filename, series_current, False)
+        elif movie.series_id is None:
+            # add series
+            utils.update_series_link(movie.filename, series_new, True)
+        else:
+            # change series
+            utils.update_series_link(movie.filename, series_current, False)
+            utils.update_series_link(movie.filename, series_new, True)
+
+    if movie.studio_id != data.studio_id:
+        studio_current = (
+            get_studio(db, movie.studio_id).name
+            if movie.studio_id is not None
+            else None
+        )
+        studio_new = (
+            get_studio(db, data.studio_id).name if data.studio_id is not None else None
+        )
+
+        if data.studio_id is None:
+            # remove studio
+            utils.update_studio_link(movie.filename, studio_current, False)
+        elif movie.studio_id is None:
+            # add studio
+            utils.update_studio_link(movie.filename, studio_new, True)
+        else:
+            # change studio
+            utils.update_studio_link(movie.filename, studio_current, False)
+            utils.update_studio_link(movie.filename, studio_new, True)
     for k, v in data.dict().items():
         setattr(movie, k, v)
-
     movie.processed = True if not movie.processed else movie.processed
 
+    utils.rename_movie_file(movie)
     db.commit()
     db.refresh(movie)
     return movie
+
+
+def get_series(db: Session, id: int) -> models.Series:
+    return db.query(models.Series).filter(models.Series.id == id).first()
+
+
+def get_studio(db: Session, id: int) -> models.Studio:
+    return db.query(models.Studio).filter(models.Studio.id == id).first()
 
 
 def get_all_movies(db: Session) -> List[models.Movie]:
@@ -106,9 +152,8 @@ def delete_movie(db: Session, movie: models.Movie) -> models.Movie:
     try:
         db.delete(movie)
         db.commit()
-        db.refresh(movie)
     except Exception as e:
-        logger.error(f"Couldn't delete movie {movie}. Doing rollback")
+        logger.error(f"Couldn't delete movie {movie}. {e} Doing rollback")
         db.rollback()
         return None
     return movie
@@ -232,11 +277,14 @@ def add_category(
 def add_movie_category(db: Session, movie_id: int, category_id: int) -> models.Movie:
     movie = get_movie_by_id(db, movie_id)
     category = get_category(db, category_id)
-    logger.info(f">>>>>>>>>>>>>>>>>>>>>>>>> {movie}{category}")
     if movie is None or category is None:
         return None
 
     movie.categories.append(category)
+    try:
+        utils.update_category_link(movie.filename, category.name, True)
+    except Exception as e:
+        logger.error(f"update category link error: {str(e)}")
     db.commit()
     db.refresh(movie)
 
@@ -251,6 +299,12 @@ def delete_movie_category(db: Session, movie_id: int, category_id: int) -> model
         return None
     if category in movie.categories:
         movie.categories.remove(category)
+
+        try:
+            utils.update_category_link(movie.filename, category.name, False)
+        except Exception as e:
+            logger.error(f"update category link error: {str(e)}")
+
     db.commit()
     db.refresh(movie)
 
@@ -265,6 +319,11 @@ def add_movie_actor(db: Session, movie_id: int, actor_id: int) -> models.Movie:
         return None
 
     movie.actors.append(actor)
+    utils.rename_movie_file(movie)
+    try:
+        utils.update_actor_link(movie.filename, actor.name, True)
+    except Exception as e:
+        logger.error(str(e))
     db.commit()
     db.refresh(movie)
 
@@ -280,6 +339,10 @@ def delete_movie_actor(db: Session, movie_id: int, actor_id: int) -> models.Movi
 
     if actor in movie.actors:
         movie.actors.remove(actor)
+        try:
+            utils.update_actor_link(movie.filename, actor.name, False)
+        except Exception as e:
+            logger.error(str(e))
         db.commit()
         db.refresh(movie)
 

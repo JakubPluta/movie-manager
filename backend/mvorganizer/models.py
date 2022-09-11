@@ -26,7 +26,10 @@ class Actor(Base):
     name = Column(String(255), nullable=False, unique=True)
 
     movies = relationship(
-        "Movie", secondary=movies_actors, back_populates="actors", order_by="Movie.name"
+        "Movie",
+        secondary=movies_actors,
+        back_populates="actors",
+        order_by="Movie.name",
     )
 
 

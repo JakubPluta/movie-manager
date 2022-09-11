@@ -1,5 +1,3 @@
-from http.client import responses
-from unicodedata import category
 from fastapi import FastAPI
 from . import schemas
 from .utils import list_files
@@ -44,7 +42,10 @@ def get_all_movies(db: Session = Depends(get_db)):
     "/movies/{movie_id}",
     response_model=schemas.Movie,
     responses={
-        404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"}
+        404: {
+            "model": schemas.HTTPExceptionSchema,
+            "description": "Invalid ID",
+        }
     },
 )
 def get_movie(movie_id: int, db: Session = Depends(get_db)):
@@ -61,7 +62,10 @@ def get_movie(movie_id: int, db: Session = Depends(get_db)):
     "/movies",
     response_model=List[schemas.Movie],
     responses={
-        500: {"model": schemas.HTTPExceptionSchema, "description": "A fatal error"}
+        500: {
+            "model": schemas.HTTPExceptionSchema,
+            "description": "A fatal error",
+        }
     },
 )
 def import_movies(db: Session = Depends(get_db)):
@@ -87,7 +91,10 @@ def import_movies(db: Session = Depends(get_db)):
     "/movies/{id}",
     response_model=schemas.Movie,
     responses={
-        404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"}
+        404: {
+            "model": schemas.HTTPExceptionSchema,
+            "description": "Invalid ID",
+        }
     },
 )
 def update_movie(
@@ -181,7 +188,10 @@ def get_category_by_name(name: str, db: Session = Depends(get_db)):
     "/categories",
     response_model=schemas.Category,
     responses={
-        409: {"model": schemas.HTTPExceptionSchema, "description": "Duplicate Category"}
+        409: {
+            "model": schemas.HTTPExceptionSchema,
+            "description": "Duplicate Category",
+        }
     },
 )
 def add_category(data: schemas.MoviePropertySchema, db: Session = Depends(get_db)):
@@ -203,7 +213,10 @@ def get_all_studios(db: Session = Depends(get_db)):
     "/studios",
     response_model=schemas.Studio,
     responses={
-        409: {"model": schemas.HTTPExceptionSchema, "description": "Duplicate Studio"}
+        409: {
+            "model": schemas.HTTPExceptionSchema,
+            "description": "Duplicate Studio",
+        }
     },
 )
 def add_studio(data: schemas.MoviePropertySchema, db: Session = Depends(get_db)):
@@ -225,7 +238,10 @@ def get_all_series(db: Session = Depends(get_db)):
     "/series",
     response_model=schemas.Series,
     responses={
-        409: {"model": schemas.HTTPExceptionSchema, "description": "Duplicate Series"}
+        409: {
+            "model": schemas.HTTPExceptionSchema,
+            "description": "Duplicate Series",
+        }
     },
 )
 def add_series(data: schemas.MoviePropertySchema, db: Session = Depends(get_db)):
@@ -247,7 +263,7 @@ def delete_movie(id: int, db: Session = Depends(get_db)):
             detail={"message": f"movie with id {id} doest not exist in database"},
         )
 
-    deleted_movie = crud.delete_movie(db, id)
+    deleted_movie = crud.delete_movie(db, movie)
     if deleted_movie is None:
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
@@ -262,7 +278,10 @@ def delete_movie(id: int, db: Session = Depends(get_db)):
     "/movie_category",
     response_model=schemas.Movie,
     responses={
-        404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"}
+        404: {
+            "model": schemas.HTTPExceptionSchema,
+            "description": "Invalid ID",
+        }
     },
 )
 def add_movie_category(movie_id: int, category_id: int, db: Session = Depends(get_db)):
@@ -283,7 +302,10 @@ def add_movie_category(movie_id: int, category_id: int, db: Session = Depends(ge
     "/movie_category",
     response_model=schemas.Movie,
     responses={
-        404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"}
+        404: {
+            "model": schemas.HTTPExceptionSchema,
+            "description": "Invalid ID",
+        }
     },
 )
 def delete_movie_category(
@@ -306,7 +328,10 @@ def delete_movie_category(
     "/movie_actor",
     response_model=schemas.Movie,
     responses={
-        404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"}
+        404: {
+            "model": schemas.HTTPExceptionSchema,
+            "description": "Invalid ID",
+        }
     },
 )
 def add_movie_actor(movie_id: int, actor_id: int, db: Session = Depends(get_db)):
@@ -327,7 +352,10 @@ def add_movie_actor(movie_id: int, actor_id: int, db: Session = Depends(get_db))
     "/movie_actor",
     response_model=schemas.Movie,
     responses={
-        404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"}
+        404: {
+            "model": schemas.HTTPExceptionSchema,
+            "description": "Invalid ID",
+        }
     },
 )
 def delete_movie_actor(movie_id: int, actor_id: int, db: Session = Depends(get_db)):
