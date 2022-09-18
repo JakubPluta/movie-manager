@@ -17,13 +17,18 @@ router = APIRouter()
 
 
 
-@router.get("/series", response_model=List[schemas.Series])
+@router.get("", response_model=List[schemas.Series])
 def get_all_series(db: Session = Depends(get_db)):
     return series_crud.get_all_series(db)
 
 
+@router.get("/{series_id}", response_model=schemas.Series)
+def get_all_series(*, db: Session = Depends(get_db), series_id: int):
+    return series_crud.get_series(db, id)
+
+
 @router.post(
-    "/series",
+    "",
     response_model=schemas.Series,
     responses={
         409: {

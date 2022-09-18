@@ -15,12 +15,12 @@ router = APIRouter()
 
 
 
-@router.get("/categories", response_model=List[schemas.Category])
+@router.get("", response_model=List[schemas.Category])
 def get_all_categories(db: Session = Depends(get_db)):
     return categories_crud.get_all_categories(db)
 
 
-@router.get("/categories/{category_id}", response_model=Optional[schemas.Category])
+@router.get("/{category_id}", response_model=Optional[schemas.Category])
 def get_category(category_id: int, db: Session = Depends(get_db)):
     category = categories_crud.get_category(db, category_id)
     if category is None:
@@ -31,7 +31,7 @@ def get_category(category_id: int, db: Session = Depends(get_db)):
     return category
 
 
-@router.get("/categories/{name}/name", response_model=Optional[schemas.Category])
+@router.get("/{name}/name", response_model=Optional[schemas.Category])
 def get_category_by_name(name: str, db: Session = Depends(get_db)):
     category = categories_crud.get_category_by_name(db, name)
     if category is None:
@@ -43,7 +43,7 @@ def get_category_by_name(name: str, db: Session = Depends(get_db)):
 
 
 @router.post(
-    "/categories",
+    "",
     response_model=schemas.Category,
     responses={
         409: {

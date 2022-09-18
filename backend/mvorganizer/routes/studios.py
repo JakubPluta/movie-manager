@@ -16,13 +16,22 @@ router = APIRouter()
 
 
 
-@router.get("/studios", response_model=List[schemas.Studio])
+@router.get("", response_model=List[schemas.Studio])
 def get_all_studios(db: Session = Depends(get_db)):
     return studios_crud.get_all_studios(db)
 
 
+@router.get('/{studio_id}', response_model=schemas.Studio)
+def get_studio_by_id(*, db: Session = Depends(get_db), studio_id: int):
+    return studios_crud.get_studio_by_id(studio_id, db)
+
+
+@router.get("/{name}/name", response_model=schemas.Studio)
+def get_studio_by_name(*, db: Session = Depends(get_db), name: str):
+    return studios_crud.get_studio_by_name(name, db)
+
 @router.post(
-    "/studios",
+    "",
     response_model=schemas.Studio,
     responses={
         409: {

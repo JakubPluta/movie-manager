@@ -1,5 +1,5 @@
 from os.path import splitext
-from typing import List, Optional
+from typing import List, Optional, Union
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import APIRouter, FastAPI
 from fastapi import Depends, FastAPI, status
@@ -14,12 +14,12 @@ from ..crud import movies_crud
 router = APIRouter()
 
 
-@router.get("/movies", response_model=List[schemas.MovieFile])
+@router.get("", response_model=List[schemas.MovieFile])
 def get_all_movies(db: Session = Depends(get_db)):
     return movies_crud.get_all_movies(db)
 
 @router.get(
-    "/movies/{movie_id}",
+    "/{movie_id}",
     response_model=schemas.Movie,
     responses={
         404: {
@@ -39,7 +39,7 @@ def get_movie(movie_id: int, db: Session = Depends(get_db)):
 
 
 @router.post(
-    "/movies",
+    "",
     response_model=List[schemas.Movie],
     responses={
         500: {
@@ -68,7 +68,7 @@ def import_movies(db: Session = Depends(get_db)):
 
 
 @router.put(
-    "/movies/{id}",
+    "/{movie_id}",
     response_model=schemas.Movie,
     responses={
         404: {
@@ -78,26 +78,26 @@ def import_movies(db: Session = Depends(get_db)):
     },
 )
 def update_movie(
-    id: int, data: schemas.MovieUpdateSchema, db: Session = Depends(get_db)
+    movie_id: int, data: schemas.MovieUpdateSchema, db: Session = Depends(get_db)
 ):
-    movie = movies_crud.update_movie(db, id, data)
+    movie = movies_crud.update_movie(db, movie_id, data)
     if movie is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
-            detail={"message": f"Movie with id {id} does not exist"},
+            detail={"message": f"Movie with id {movie_id} does not exist"},
         )
 
     return movie
 
 
 
-@router.delete("/movies/{movie_id}")
-def delete_movie(id: int, db: Session = Depends(get_db)):
-    movie = movies_crud.get_movie_by_id(db, id)
+@router.delete("/{movie_id}")
+def delete_movie(movie_id: int, db: Session = Depends(get_db)):
+    movie = movies_crud.get_movie_by_id(db, movie_id)
     if movie is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
-            detail={"message": f"movie with id {id} doest not exist in database"},
+            detail={"message": f"movie with id {movie_id} doest not exist in database"},
         )
 
     deleted_movie = movies_crud.delete_movie(db, movie)
@@ -105,10 +105,10 @@ def delete_movie(id: int, db: Session = Depends(get_db)):
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST,
             detail={
-                "message": f"Something went wrong. Couldn't delete movie {movie.name} with id {id}"
+                "message": f"Something went wrong. Couldn't delete movie {movie.name} with id {movie_id}"
             },
         )
-    return {"message": f"movie with {id} deleted"}
+    return {"message": f"movie with {movie_id} deleted"}
 
 
 
@@ -163,7 +163,7 @@ def delete_movie_category(
 
 
 @router.post(
-    "/movie_actor",
+    "/movie_actor/",
     response_model=schemas.Movie,
     responses={
         404: {
@@ -187,7 +187,7 @@ def add_movie_actor(movie_id: int, actor_id: int, db: Session = Depends(get_db))
 
 
 @router.delete(
-    "/movie_actor",
+    "/movie_actor/",
     response_model=schemas.Movie,
     responses={
         404: {
@@ -196,7 +196,7 @@ def add_movie_actor(movie_id: int, actor_id: int, db: Session = Depends(get_db))
         }
     },
 )
-def delete_movie_actor(movie_id: int, actor_id: int, db: Session = Depends(get_db)):
+def delete_movie_actor(movie_id: Union[int, str], actor_id: int, db: Session = Depends(get_db)):
     movie = movies_crud.delete_movie_actor(db, movie_id, actor_id)
 
     if movie is None:

@@ -17,7 +17,7 @@ router = APIRouter()
 
 
 @router.post(
-    "/actors",
+    "",
     response_model=schemas.Actor,
     responses={
         409: {
@@ -36,12 +36,12 @@ def add_actor(data: schemas.MoviePropertySchema, db: Session = Depends(get_db)):
     return actor
 
 
-@router.get("/actors", response_model=List[schemas.Actor])
+@router.get("", response_model=List[schemas.Actor])
 def get_actors(db: Session = Depends(get_db)):
     return actors_crud.get_all_actors(db)
 
 
-@router.get("/actors/{actor_id}")
+@router.get("/{actor_id}")
 def get_actor(actor_id: int, db: Session = Depends(get_db)):
     actor = actors_crud.get_actor_by_id(actor_id, db)
     if actor is None:
@@ -52,7 +52,7 @@ def get_actor(actor_id: int, db: Session = Depends(get_db)):
     return actor
 
 
-@router.get("/actors/{name}/name")
+@router.get("/{name}/name")
 def get_actor_by_name(name: str, db: Session = Depends(get_db)):
     actor = actors_crud.get_actor_by_name(name, db)
     if actor is None:

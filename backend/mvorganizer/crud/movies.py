@@ -7,6 +7,11 @@ from .. import models
 from .. import utils
 import logging
 from sqlalchemy import func
+from .categories import get_category, get_category_by_name
+from .actors import get_actor_by_id, get_actor_by_name
+from .series import get_series, get_series_by_name
+from .studios import get_studio_by_id, get_studio_by_name
+
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +94,7 @@ def update_movie(db: Session, id: int, data: schemas.MovieUpdateSchema) -> model
         ]
     ):
         return movie
+    
 
     if movie.series_id != data.series_id:
         series_current = (
@@ -112,12 +118,12 @@ def update_movie(db: Session, id: int, data: schemas.MovieUpdateSchema) -> model
 
     if movie.studio_id != data.studio_id:
         studio_current = (
-            get_studio(db, movie.studio_id).name
+            get_studio_by_id(movie.studio_id, db).name
             if movie.studio_id is not None
             else None
         )
         studio_new = (
-            get_studio(db, data.studio_id).name if data.studio_id is not None else None
+            get_studio_by_id(data.studio_id, db).name if data.studio_id is not None else None
         )
 
         if data.studio_id is None:
@@ -154,7 +160,6 @@ def delete_movie(db: Session, movie: models.Movie) -> models.Movie:
 def add_movie_actor(db: Session, movie_id: int, actor_id: int) -> models.Movie:
     movie = get_movie_by_id(db, movie_id)
     actor = get_actor_by_id(db, actor_id)
-
     if movie is None or actor is None:
         return None
 
