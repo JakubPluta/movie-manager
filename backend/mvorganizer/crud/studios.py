@@ -2,6 +2,8 @@ from sqlite3 import IntegrityError
 from sqlalchemy.orm import Session
 from typing import Optional, List
 
+from ..exceptions import DuplicateEntryException, InvalidIDException
+
 from .. import schemas
 from .. import models
 from .. import utils
@@ -28,26 +30,28 @@ def get_studio_by_id(id: int, db: Session) -> models.Studio:
 
 
 def add_studio(db: Session, name: str) -> models.Studio:
-    studio = models.Studio(name=name)
+    studio = models.Studio(name=name, sort_name=utils.generate_sort_name(name))
 
     try:
         db.add(studio)
         db.commit()
         db.refresh(studio)
     except Exception as e:
-        logger.error(f"SqlAlchemy exception {str(e)}. Doing rollback")
         db.rollback()
-        return
+        raise DuplicateEntryException(f"Studio {name} already exists")
 
     return studio
 
 
-def delete_studio(db: Session, studio: models.Studio) -> models.Studio:
+def delete_studio(db: Session, studio_id: int) -> models.Studio:
+    studio = get_studio_by_id(id, db)
+    if studio is None:
+        raise InvalidIDException(f"Studio with id {studio_id} doesn't exists")
     try:
         db.delete(studio)
         db.commit()
     except Exception as e:
         logger.error(f"Couldn't delete studio {studio}. {e} Doing rollback")
         db.rollback()
-        return None
+        raise e
     return studio

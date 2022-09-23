@@ -10,10 +10,14 @@ from ..models import Base
 from ..base_db import engine, Session
 from ..session import get_db
 from ..crud import actors_crud
+from ..exceptions import (
+    DuplicateEntryException,
+    InvalidIDException,
+    ListFilesException,
+    PathException,
+)
 
 router = APIRouter()
-
-
 
 
 @router.post(
@@ -27,11 +31,12 @@ router = APIRouter()
     },
 )
 def add_actor(data: schemas.MoviePropertySchema, db: Session = Depends(get_db)):
-    actor = actors_crud.add_actor(db, data.name)
-    if actor is None:
+    try:
+        actor = actors_crud.add_actor(db, data.name)
+    except DuplicateEntryException as e:
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            detail={"message": f"Actor: {data.name} already in database"},
+            detail={"message": str(e)},
         )
     return actor
 

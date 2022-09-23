@@ -53,6 +53,8 @@ class Movie(Base):
     id = Column(Integer, primary_key=True)
     filename = Column(String(255), nullable=False, unique=True)
     name = Column(String(255), nullable=True)
+    sort_name = Column(String(255), nullable=False, unique=True)
+    
     series_id = Column(
         Integer,
         ForeignKey("series.id"),
@@ -106,6 +108,7 @@ class Series(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(255), nullable=False, unique=True)
 
+    sort_name = Column(String(255), nullable=False, unique=True)
     movies = relationship(
         "Movie",
         back_populates="series",
@@ -118,7 +121,8 @@ class Studio(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(255), nullable=False, unique=True)
-
+    sort_name = Column(String(255), nullable=False, unique=True)
+    
     movies = relationship(
         "Movie",
         back_populates="studio",

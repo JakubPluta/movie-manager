@@ -35,6 +35,33 @@ const MovieData = ({ formik }: MovieSectionProps) => {
     })();
   }, [dispatch]);
 
+  const onRemoveMovie = async () => {
+    if (formik.values.movieId) {
+      const id = +formik.values.movieId;
+      const filename = state?.movies.filter((m) => m.id === id)[0].filename;
+
+      if (window.confirm(`Do you really want to remove ${filename}`)) {
+        const response = await fetch(
+          `${process.env.REACT_APP_BACKEND_URI}/movies/${id}`,
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+          }
+        );
+        await response.json();
+
+        if (response.ok) {
+          formik.setStatus(`Successfully deleted ${filename}`);
+        } else {
+          formik.setStatus(`Error occured while removing ${filename}`);
+        }
+      }
+    }
+  };
+
   return (
     <MovieSection title="Movie Data">
       <div className="h-64">
@@ -92,7 +119,6 @@ const MovieData = ({ formik }: MovieSectionProps) => {
                   name="movieSeriesNumber"
                 />
               </MovieDataFormRow>
-
               <div className="flex my-4">
                 <button
                   className="movie-data-button bg-green-700 hover:bg-green-600"
@@ -104,10 +130,16 @@ const MovieData = ({ formik }: MovieSectionProps) => {
                 <button
                   className="movie-data-button bg-red-700 hover:bg-red-600"
                   type="button"
+                  onClick={onRemoveMovie}
                 >
                   Remove
                 </button>
               </div>
+              {formik.status && (
+                <div>
+                  <p className="font-semibold text-center">{formik.status}</p>
+                </div>
+              )}
             </div>
           </fieldset>
         </form>

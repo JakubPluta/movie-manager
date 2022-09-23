@@ -13,7 +13,6 @@ const CategorySelector = ({ formik }: MovieSectionProps) => {
   const [loading, setLoading] = useState(true);
   const { state, dispatch } = useContext(StateContext);
 
-
   const onUpdateCategory = async (id: string, selected: boolean) => {
     if (formik.values.movieId) {
       const qs = new URLSearchParams({
@@ -21,34 +20,44 @@ const CategorySelector = ({ formik }: MovieSectionProps) => {
         category_id: id,
       });
 
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URI}/movie_category?${qs}`,
-        {method: selected ? "POST" : "DELETE"}
-      
-      )
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URI}/movies/movie_category?${qs}`,
+        {
+          method: selected ? "POST" : "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+        }
+      );
       await response.json();
-
-
     }
-  }
+  };
 
-
-  useEffect( () => {
+  useEffect(() => {
     (async () => {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URI}/categories`)
-      const data = await response.json()
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URI}/categories`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+        }
+      );
+      const data = await response.json();
 
       dispatch({
         type: Actions.SetCategories,
         payload: data,
-      })
+      });
 
-      setLoading(false)
-}) ()
-}
-  , [dispatch]);
+      setLoading(false);
+    })();
+  }, [dispatch]);
 
   return (
-   <MovieSection title="Categories">
+    <MovieSection title="Categories">
       <div className="h-72">
         {loading ? (
           <Loading />

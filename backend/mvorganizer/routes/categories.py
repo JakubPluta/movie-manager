@@ -10,9 +10,14 @@ from ..models import Base
 from ..base_db import engine, Session
 from ..session import get_db
 from ..crud import categories_crud
+from ..exceptions import (
+    DuplicateEntryException,
+    InvalidIDException,
+    ListFilesException,
+    PathException,
+)
 
 router = APIRouter()
-
 
 
 @router.get("", response_model=List[schemas.Category])

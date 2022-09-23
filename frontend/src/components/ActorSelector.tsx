@@ -6,6 +6,7 @@ import { useContext, useEffect, useState } from "react";
 import { MovieSectionProps } from "../types/form";
 import { Actions } from "../types/state";
 import Loading from "./Loading";
+
 const ActorSelector = ({ formik }: MovieSectionProps) => {
   const { state, dispatch } = useContext(StateContext);
   const [loading, setLoading] = useState(true);
@@ -13,7 +14,13 @@ const ActorSelector = ({ formik }: MovieSectionProps) => {
   useEffect(() => {
     (async () => {
       const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_URI}/actors`
+        `${process.env.REACT_APP_BACKEND_URI}/actors`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+        }
       );
       const data = await response.json();
 
@@ -27,18 +34,22 @@ const ActorSelector = ({ formik }: MovieSectionProps) => {
 
   const onUpdateActor = async (id: string, selected: boolean) => {
     if (formik.values.movieId) {
-      const qs = new URLSearchParams({
+      const queryString = new URLSearchParams({
         movie_id: formik.values.movieId,
         actor_id: id,
       });
+
       const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_URI}/movie_actor?${qs}`,
+        `${process.env.REACT_APP_BACKEND_URI}/movies/movie_actor/?${queryString}`,
         {
           method: selected ? "POST" : "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
         }
       );
       const data = await response.json();
-
       if (response.ok) {
         dispatch({
           type: Actions.SetActorsSelected,
@@ -78,7 +89,6 @@ const ActorSelector = ({ formik }: MovieSectionProps) => {
             </select>
           </ActorSelectorList>
         )}
-
 
         <ActorSelectorList title="Selected">
           {state!.actorsSelected.length > 0 ? (

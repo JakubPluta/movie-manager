@@ -11,7 +11,7 @@ from .categories import get_category, get_category_by_name
 from .actors import get_actor_by_id, get_actor_by_name
 from .series import get_series, get_series_by_name
 from .studios import get_studio_by_id, get_studio_by_name
-
+from ..exceptions import DuplicateEntryException, InvalidIDException
 
 logger = logging.getLogger(__name__)
 
@@ -23,9 +23,9 @@ def get_all_movies(db: Session) -> List[models.Movie]:
         .outerjoin(models.Series)
         .order_by(
             models.Movie.processed,
-            models.Studio.name,
-            models.Series.name,
-            models.Movie.name,
+            models.Studio.sort_name,
+            models.Series.sort_name,
+            models.Movie.sort_name,
         )
         .all()
     )
@@ -61,6 +61,7 @@ def add_movie(
         series_id=series_id,
         series_number=series_number,
         processed=processed,
+        sort_name=utils.generate_sort_name(name),
     )
 
     if actor_ids is not None:
@@ -73,9 +74,8 @@ def add_movie(
         db.commit()
         db.refresh(movie)
     except Exception as e:
-        logger.error(f"SqlAlchemy exeption {str(e)}. Doing rollback")
         db.rollback()
-        return None
+        raise DuplicateEntryException(f"{movie} already exists in database")
 
     utils.migrate_file(movie)
     return movie
@@ -84,7 +84,7 @@ def add_movie(
 def update_movie(db: Session, id: int, data: schemas.MovieUpdateSchema) -> models.Movie:
     movie = get_movie_by_id(db, id)
     if movie is None:
-        return None
+        raise InvalidIDException(f"Movie ID {id} does not exist")
     if all(
         [
             data.name == movie.name,
@@ -94,7 +94,9 @@ def update_movie(db: Session, id: int, data: schemas.MovieUpdateSchema) -> model
         ]
     ):
         return movie
-    
+
+    if movie.name != data.name:
+        movie.sort_name = utils.generate_sort_name(data.name)
 
     if movie.series_id != data.series_id:
         series_current = (
@@ -123,7 +125,9 @@ def update_movie(db: Session, id: int, data: schemas.MovieUpdateSchema) -> model
             else None
         )
         studio_new = (
-            get_studio_by_id(data.studio_id, db).name if data.studio_id is not None else None
+            get_studio_by_id(data.studio_id, db).name
+            if data.studio_id is not None
+            else None
         )
 
         if data.studio_id is None:
@@ -146,24 +150,39 @@ def update_movie(db: Session, id: int, data: schemas.MovieUpdateSchema) -> model
     return movie
 
 
-def delete_movie(db: Session, movie: models.Movie) -> models.Movie:
-    try:
-        db.delete(movie)
-        db.commit()
-    except Exception as e:
-        logger.error(f"Couldn't delete movie {movie}. {e} Doing rollback")
-        db.rollback()
-        return None
-    return movie
+def delete_movie(
+    db: Session,
+    id: int,
+) -> None:
+    movie = get_movie_by_id(db, id)
+
+    if movie is None:
+        raise InvalidIDException(f"Movie ID {id} does not exist")
+
+    utils.remove_movie(movie)
+
+    db.delete(movie)
+    db.commit()
 
 
 def add_movie_actor(db: Session, movie_id: int, actor_id: int) -> models.Movie:
     movie = get_movie_by_id(db, movie_id)
-    actor = get_actor_by_id(db, actor_id)
-    if movie is None or actor is None:
-        return None
+    if movie is None:
+        raise InvalidIDException(f"Movie ID {movie_id} does not exist")
 
+    actor = get_actor_by_id(db, actor_id)
+
+    if actor is None:
+        raise InvalidIDException(f"Actor ID {actor_id} does not exist")
+
+    for movie_actor in movie.actors:
+        if actor_id == movie_actor.id:
+            raise DuplicateEntryException(
+                f"Actor ID {actor_id} is already on Movie ID {movie_id}"
+            )
     movie.actors.append(actor)
+    db.commit()
+
     utils.rename_movie_file(movie)
     try:
         utils.update_actor_link(movie.filename, actor.name, True)
@@ -177,10 +196,14 @@ def add_movie_actor(db: Session, movie_id: int, actor_id: int) -> models.Movie:
 
 def delete_movie_actor(db: Session, movie_id: int, actor_id: int) -> models.Movie:
     movie = get_movie_by_id(db, movie_id)
+
+    if movie is None:
+        raise InvalidIDException(f"Movie ID {movie_id} does not exist")
+
     actor = get_actor_by_id(db, actor_id)
 
-    if movie is None or actor is None:
-        return None
+    if actor is None:
+        raise InvalidIDException(f"Actor ID {actor_id} does not exist")
 
     if actor in movie.actors:
         movie.actors.remove(actor)
@@ -197,10 +220,22 @@ def delete_movie_actor(db: Session, movie_id: int, actor_id: int) -> models.Movi
 def add_movie_category(db: Session, movie_id: int, category_id: int) -> models.Movie:
     movie = get_movie_by_id(db, movie_id)
     category = get_category(db, category_id)
-    if movie is None or category is None:
-        return None
+    if movie is None:
+        raise InvalidIDException(f"Movie ID {movie_id} does not exist")
+
+    if category is None:
+        raise InvalidIDException(f"category ID {category_id} does not exist")
+
+    movie_category: models.Category
+    for movie_category in movie.categories:
+        if category_id == movie_category.id:
+            raise DuplicateEntryException(
+                f"Category ID {category_id} is already on Movie ID {movie_id}"
+            )
 
     movie.categories.append(category)
+    db.commit()
+
     try:
         utils.update_category_link(movie.filename, category.name, True)
     except Exception as e:
@@ -213,10 +248,15 @@ def add_movie_category(db: Session, movie_id: int, category_id: int) -> models.M
 
 def delete_movie_category(db: Session, movie_id: int, category_id: int) -> models.Movie:
     movie = get_movie_by_id(db, movie_id)
+
+    if movie is None:
+        raise InvalidIDException(f"Movie ID {movie_id} does not exist")
+
     category = get_category(db, category_id)
 
-    if movie is None or category is None:
-        return None
+    if category is None:
+        raise InvalidIDException(f"Category ID {category_id} does not exist")
+
     if category in movie.categories:
         movie.categories.remove(category)
 

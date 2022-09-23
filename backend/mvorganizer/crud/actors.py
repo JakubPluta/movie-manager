@@ -5,6 +5,7 @@ from typing import Optional, List
 from .. import schemas
 from .. import models
 from .. import utils
+from ..exceptions import DuplicateEntryException, InvalidIDException
 import logging
 from sqlalchemy import func
 
@@ -19,9 +20,8 @@ def add_actor(db: Session, name: str) -> models.Actor:
         db.commit()
         db.refresh(actor)
     except Exception as e:
-        logger.error(f"SqlAlchemy exeption {str(e)}. Doing rollback")
         db.rollback()
-        return
+        raise DuplicateEntryException(f"Actor {name} already exists")
 
     return actor
 
@@ -49,5 +49,5 @@ def delete_actor(db: Session, actor: models.Actor) -> models.Actor:
     except Exception as e:
         logger.error(f"Couldn't delete actor {actor}. {e} Doing rollback")
         db.rollback()
-        return None
+        return e
     return actor

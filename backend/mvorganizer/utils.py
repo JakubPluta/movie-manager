@@ -4,9 +4,16 @@ from pathlib import Path
 from typing import List
 from fastapi import status
 from fastapi.exceptions import HTTPException
+from .base_db import Session
+from .exceptions import ListFilesException, PathException, DuplicateEntryException
 from . import models
 from .config import get_config
-
+import re
+from typing import List, Tuple, Optional, Any
+from .crud.series import get_series_by_name
+from .crud.studios import get_studio_by_name
+from .crud.actors import get_actor_by_name
+from .crud.categories import get_category_by_name
 
 config = get_config()
 
@@ -17,7 +24,7 @@ def list_files(path: str) -> List[str]:
     try:
         files = sorted(os.listdir(path))
     except:
-        raise Exception(f"Unable to read path {path}")
+        raise ListFilesException(f"Unable to read path {path}")
 
     return files
 
@@ -30,11 +37,8 @@ def migrate_file(movie: models.Movie, adding: bool = True):
     path_new = f"{base_new}/{movie.filename}"
 
     if os.path.exists(path_new):
-        raise HTTPException(
-            status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "message": f"Unable to move {path_current} -> {path_new} as it already exists"
-            },
+        raise PathException(
+            f"Unable to move {path_current} -> {path_new} as it already exists"
         )
 
     logger.info(f"migrating {path_current} -> {path_new}")
@@ -109,11 +113,8 @@ def rename_movie_file(movie: models.Movie) -> None:
 
     if path_current != path_new:
         if os.path.exists(path_new):
-            raise HTTPException(
-                status.HTTP_409_CONFLICT,
-                detail={
-                    "message": f"New filename conflicts with existing movie file {filename_new}"
-                },
+            raise PathException(
+                f"Unable to rename {movie.filename} as {filename_new} already exists"
             )
 
         os.rename(path_current, path_new)
@@ -154,32 +155,24 @@ def update_link(filename: str, path_link_base: str, name: str, selected: bool) -
                 path = Path(path_base)
                 path.mkdir(parents=True, exist_ok=True)
             except:
-                raise HTTPException(
-                    status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail={"message": f"Directory {path_base} could not be created"},
-                )
+                raise PathException(f"Link directory {path_base} could not be created")
 
         if not os.path.lexists(path_link):
             try:
                 os.symlink(path_file, path_link)
             except:
-                raise HTTPException(
-                    status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail={
-                        "message": f"Unable to create link {path_file} -> {path_link}"
-                    },
-                )
+                raise PathException(f"Unable to create link {path_file} -> {path_link}")
     else:
         if os.path.lexists(path_link):
             try:
                 os.remove(path_link)
             except:
-                raise HTTPException(
-                    status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail={
-                        "message": f"Unable to remove link {path_file} -> {path_link}"
-                    },
-                )
+                raise PathException(f"Unable to delete link {path_file} -> {path_link}")
+
+            try:
+                os.rmdir(path_base)
+            except:
+                pass
 
 
 def update_actor_link(filename: str, name: str, selected: bool) -> None:
@@ -208,3 +201,56 @@ def update_studio_link(filename: str, name: str, selected: bool) -> None:
         update_link(filename, config["studios"], name, selected)
     except Exception as e:
         logger.info(str(e))
+
+
+def generate_sort_name(name: str) -> str:
+    return re.sub(
+        r"^(?:a|an|the) ",
+        "",
+        re.sub(r"[^a-z0-9 ]", "", name.lower()),
+    )
+
+
+def parse_filename(
+    db: Session, filename: str
+) -> Tuple[str, Optional[int], Optional[int], Optional[int], List[models.Actor]]:
+    name, _ = os.path.splitext(filename)
+    studio_id, series_id, series_number, actors = None, None, None, None
+    regex = (
+        r"^"  # Start of line
+        r"(?:\[([A-Za-z0-9 .,\'-]+)\])?"  # Optional studio
+        r" ?"  # Optional space
+        r"(?:{([A-Za-z0-9 .,\'-]+?)(?: ([0-9]+))?})?"  # Optional series name/number
+        r" ?"  # Optional space
+        r"([A-Za-z0-9 .,\'-]+?)?"  # Optional movie name
+        r" ?"  # Optional space
+        r"(?:\(([A-Za-z0-9 .,\'-]+)\))?"  # Optional actor list
+        r"$"  # End of line
+    )
+
+    matches = re.search(regex, name)
+    if matches is not None:
+        studio_name, series_name, series_number, name, actor_names = matches.groups()
+
+        if studio_name is not None:
+            studio = get_studio_by_name(db, series_name)
+            if studio is not None:
+                studio_id = studio.id
+
+        if series_name is not None:
+            series = get_series_by_name(db, series_name)
+
+            if series is not None:
+                series_id = series.id
+
+        if actor_names is not None:
+            actors = [
+                actor
+                for actor in (
+                    get_actor_by_name(db, actor_name)
+                    for actor_name in actor_names.split(", ")
+                )
+                if actor is not None
+            ]
+
+    return (name, studio_id, series_id, series_number, actors)

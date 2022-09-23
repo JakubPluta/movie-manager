@@ -10,10 +10,14 @@ from ..models import Base
 from ..base_db import engine, Session
 from ..session import get_db
 from ..crud import studios_crud
+from ..exceptions import (
+    DuplicateEntryException,
+    InvalidIDException,
+    ListFilesException,
+    PathException,
+)
 
 router = APIRouter()
-
-
 
 
 @router.get("", response_model=List[schemas.Studio])
@@ -21,7 +25,7 @@ def get_all_studios(db: Session = Depends(get_db)):
     return studios_crud.get_all_studios(db)
 
 
-@router.get('/{studio_id}', response_model=schemas.Studio)
+@router.get("/{studio_id}", response_model=schemas.Studio)
 def get_studio_by_id(*, db: Session = Depends(get_db), studio_id: int):
     return studios_crud.get_studio_by_id(studio_id, db)
 
@@ -29,6 +33,7 @@ def get_studio_by_id(*, db: Session = Depends(get_db), studio_id: int):
 @router.get("/{name}/name", response_model=schemas.Studio)
 def get_studio_by_name(*, db: Session = Depends(get_db), name: str):
     return studios_crud.get_studio_by_name(name, db)
+
 
 @router.post(
     "",

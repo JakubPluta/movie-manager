@@ -10,6 +10,15 @@ from ..models import Base
 from ..base_db import engine, Session
 from ..session import get_db
 from ..crud import movies_crud
+from ..config import get_config
+from ..exceptions import (
+    DuplicateEntryException,
+    InvalidIDException,
+    ListFilesException,
+    PathException,
+)
+
+config = get_config()
 
 router = APIRouter()
 
@@ -17,6 +26,7 @@ router = APIRouter()
 @router.get("", response_model=List[schemas.MovieFile])
 def get_all_movies(db: Session = Depends(get_db)):
     return movies_crud.get_all_movies(db)
+
 
 @router.get(
     "/{movie_id}",
@@ -90,7 +100,6 @@ def update_movie(
     return movie
 
 
-
 @router.delete("/{movie_id}")
 def delete_movie(movie_id: int, db: Session = Depends(get_db)):
     movie = movies_crud.get_movie_by_id(db, movie_id)
@@ -111,26 +120,28 @@ def delete_movie(movie_id: int, db: Session = Depends(get_db)):
     return {"message": f"movie with {movie_id} deleted"}
 
 
-
 @router.post(
     "/movie_category",
     response_model=schemas.Movie,
     responses={
-        404: {
+        404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"},
+        409: {
             "model": schemas.HTTPExceptionSchema,
-            "description": "Invalid ID",
-        }
+            "description": "Duplicate Category",
+        },
+        500: {"model": schemas.HTTPExceptionSchema, "description": "Path Error"},
     },
 )
 def add_movie_category(movie_id: int, category_id: int, db: Session = Depends(get_db)):
-    movie = movies_crud.add_movie_category(db, movie_id, category_id)
-
-    if movie is None:
+    try:
+        movie = movies_crud.add_movie_category(db, movie_id, category_id)
+    except DuplicateEntryException as e:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail={"message": str(e)})
+    except InvalidIDException as e:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"message": str(e)})
+    except PathException as e:
         raise HTTPException(
-            status.HTTP_404_NOT_FOUND,
-            detail={
-                "message": f"Movie ID {movie_id} or Category ID {category_id} does not exist"
-            },
+            status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"message": str(e)}
         )
 
     return movie
@@ -140,23 +151,20 @@ def add_movie_category(movie_id: int, category_id: int, db: Session = Depends(ge
     "/movie_category",
     response_model=schemas.Movie,
     responses={
-        404: {
-            "model": schemas.HTTPExceptionSchema,
-            "description": "Invalid ID",
-        }
+        404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"},
+        500: {"model": schemas.HTTPExceptionSchema, "description": "Path Error"},
     },
 )
 def delete_movie_category(
     movie_id: int, category_id: int, db: Session = Depends(get_db)
 ):
-    movie = movies_crud.delete_movie_category(db, movie_id, category_id)
-
-    if movie is None:
+    try:
+        movie = movies_crud.delete_movie_category(db, movie_id, category_id)
+    except InvalidIDException as e:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"message": str(e)})
+    except PathException as e:
         raise HTTPException(
-            status.HTTP_404_NOT_FOUND,
-            detail={
-                "message": f"Movie ID {movie_id} or Category ID {category_id} does not exist"
-            },
+            status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"message": str(e)}
         )
 
     return movie
@@ -166,21 +174,21 @@ def delete_movie_category(
     "/movie_actor/",
     response_model=schemas.Movie,
     responses={
-        404: {
-            "model": schemas.HTTPExceptionSchema,
-            "description": "Invalid ID",
-        }
+        404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"},
+        409: {"model": schemas.HTTPExceptionSchema, "description": "Duplicate Actor"},
+        500: {"model": schemas.HTTPExceptionSchema, "description": "Path Error"},
     },
 )
 def add_movie_actor(movie_id: int, actor_id: int, db: Session = Depends(get_db)):
-    movie = movies_crud.add_movie_actor(db, movie_id, actor_id)
-
-    if movie is None:
+    try:
+        movie = movies_crud.add_movie_actor(db, movie_id, actor_id)
+    except DuplicateEntryException as e:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail={"message": str(e)})
+    except InvalidIDException as e:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"message": str(e)})
+    except PathException as e:
         raise HTTPException(
-            status.HTTP_404_NOT_FOUND,
-            detail={
-                "message": f"Movie ID {movie_id} or Actor ID {actor_id} does not exist"
-            },
+            status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"message": str(e)}
         )
 
     return movie
@@ -190,22 +198,20 @@ def add_movie_actor(movie_id: int, actor_id: int, db: Session = Depends(get_db))
     "/movie_actor/",
     response_model=schemas.Movie,
     responses={
-        404: {
-            "model": schemas.HTTPExceptionSchema,
-            "description": "Invalid ID",
-        }
+        404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"},
+        500: {"model": schemas.HTTPExceptionSchema, "description": "Path Error"},
     },
 )
-def delete_movie_actor(movie_id: Union[int, str], actor_id: int, db: Session = Depends(get_db)):
-    movie = movies_crud.delete_movie_actor(db, movie_id, actor_id)
-
-    if movie is None:
+def delete_movie_actor(
+    movie_id: Union[int, str], actor_id: int, db: Session = Depends(get_db)
+):
+    try:
+        movie = movies_crud.delete_movie_actor(db, movie_id, actor_id)
+    except InvalidIDException as e:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"message": str(e)})
+    except PathException as e:
         raise HTTPException(
-            status.HTTP_404_NOT_FOUND,
-            detail={
-                "message": f"Movie ID {movie_id} or Actor ID {actor_id} does not exist"
-            },
+            status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"message": str(e)}
         )
 
     return movie
-

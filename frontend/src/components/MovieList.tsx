@@ -15,7 +15,16 @@ const MovieList = ({ formik }: MovieSectionProps) => {
 
   useEffect(() => {
     (async () => {
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URI}/movies`);
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URI}/movies`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+        }
+      );
       const data = await response.json();
 
       dispatch({
@@ -33,12 +42,18 @@ const MovieList = ({ formik }: MovieSectionProps) => {
         const id = +formik.values.movieId;
 
         const response = await fetch(
-          `${process.env.REACT_APP_BACKEND_URI}/movies/${id}`
+          `${process.env.REACT_APP_BACKEND_URI}/movies/${id}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+          }
         );
         const data: MovieInfoResponseType = await response.json();
-        console.log(data)
-        if (response.ok) {
 
+        if (response.ok) {
           formik.setValues({
             ...formik.values,
             movieName: data.name ?? "",
@@ -56,6 +71,8 @@ const MovieList = ({ formik }: MovieSectionProps) => {
             type: Actions.SetActorsSelected,
             payload: data.actors,
           });
+
+          formik.setStatus("");
         }
       }
     })();

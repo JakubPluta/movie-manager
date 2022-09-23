@@ -4,7 +4,7 @@ import MovieData from "../components/MovieData";
 import ActorSelector from "../components/ActorSelector";
 import CategorySelector from "../components/CategorySelector";
 import StateContext from "../state/StateContext";
-import { Formik, FormikHelpers } from "formik"
+import { Formik, FormikHelpers } from "formik";
 import { MainPageFormValuesType } from "../types/form";
 
 const initialValues: MainPageFormValuesType = {
@@ -20,8 +20,8 @@ const initialValues: MainPageFormValuesType = {
 
 const MainPage = () => {
   const { state } = useContext(StateContext);
-  
-  const onSubmit = async(
+
+  const onSubmit = async (
     values: MainPageFormValuesType,
     helpers: FormikHelpers<MainPageFormValuesType>
   ) => {
@@ -30,30 +30,34 @@ const MainPage = () => {
         name: values.movieName ? values.movieName : null,
         series_id: values.movieSeriesId ? +values.movieSeriesId : null,
         series_number: values.movieSeriesNumber
-        ? +values.movieSeriesNumber: null,
-       studio_id: values.movieStudioId ? +values.movieStudioId : null,
-      }
-    
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URI}/movies/${values.movieId}`,
-      
+          ? +values.movieSeriesNumber
+          : null,
+        studio_id: values.movieStudioId ? +values.movieStudioId : null,
+      };
+
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URI}/movies/${values.movieId}`,
+
         {
           method: "PUT",
-             headers: {
-          "Content-Type": "application/json",
+          headers: {
+            "Content-Type": "application/json",
           },
-             body: JSON.stringify(body)
+          body: JSON.stringify(body),
+        }
+      );
+      await response.json();
+
+      if (response.ok) {
+        helpers.setStatus(`Successfully updated movie ${values.movieName}`);
+      } else {
+        helpers.setStatus("Error updating movie.");
       }
-      )
-      await response.json()
-
     }
-
-
-  }
-
+  };
 
   return (
-  <Formik initialValues={initialValues} onSubmit={onSubmit}>
+    <Formik initialValues={initialValues} onSubmit={onSubmit}>
       {(formik) => {
         return (
           <>

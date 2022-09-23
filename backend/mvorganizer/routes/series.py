@@ -10,11 +10,14 @@ from ..models import Base
 from ..base_db import engine, Session
 from ..session import get_db
 from ..crud import series_crud
+from ..exceptions import (
+    DuplicateEntryException,
+    InvalidIDException,
+    ListFilesException,
+    PathException,
+)
 
 router = APIRouter()
-
-
-
 
 
 @router.get("", response_model=List[schemas.Series])
@@ -45,5 +48,3 @@ def add_series(data: schemas.MoviePropertySchema, db: Session = Depends(get_db))
             detail={"message": f"series {data.name} already in database"},
         )
     return series
-
-
