@@ -7,7 +7,8 @@ import { Field } from "formik";
 import { useEffect, useState } from "react";
 import { Actions } from "../types/state";
 import Loading from "./Loading";
-import internal from "stream";
+import { MovieInfoResponseType } from "../types/api";
+
 
 const CategorySelector = ({ formik }: MovieSectionProps) => {
   const [loading, setLoading] = useState(true);
@@ -30,10 +31,36 @@ const CategorySelector = ({ formik }: MovieSectionProps) => {
           },
         }
       );
-      await response.json();
+      const data: MovieInfoResponseType = await response.json();
+
+      const categoryName = state?.categories.filter(
+        (category) => category.id === +id
+      )[0].name;
+
+     switch (response.status) {
+        case 200:
+          formik.setStatus(
+            `Successfully ${
+              selected ? "added" : "removed"
+            } category ${categoryName} ${selected ? "to" : "from"} ${data.name}`
+          );
+          break;
+
+        case 404:
+          formik.setStatus("Server could not find category");
+          break;
+
+        case 409:
+          formik.setStatus(`Category ${categoryName} is already selected`);
+          break;
+
+        default:
+          formik.setStatus("Unknown server error");
+          break;
+      }
     }
   };
-
+  
   useEffect(() => {
     (async () => {
       const response = await fetch(

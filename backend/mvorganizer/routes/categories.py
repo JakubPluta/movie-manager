@@ -58,10 +58,11 @@ def get_category_by_name(name: str, db: Session = Depends(get_db)):
     },
 )
 def add_category(data: schemas.MoviePropertySchema, db: Session = Depends(get_db)):
-    category = categories_crud.add_category(db, data.name)
-    if category is None:
+    try:
+        category = categories_crud.add_category(db, data.name)
+    except DuplicateEntryException as e:
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            detail={"message": f"Category {data.name} already in database"},
+            detail={"message": str(e)},
         )
     return category

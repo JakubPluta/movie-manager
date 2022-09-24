@@ -1,21 +1,12 @@
-from os.path import splitext
-from typing import List, Optional
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi import APIRouter, FastAPI
-from fastapi import Depends, FastAPI, status
+from typing import List
+from fastapi import APIRouter
+from fastapi import Depends, status
 from fastapi.exceptions import HTTPException
 from .. import schemas
-from ..utils import list_files
-from ..models import Base
-from ..base_db import engine, Session
+from ..base_db import Session
 from ..session import get_db
 from ..crud import series_crud
-from ..exceptions import (
-    DuplicateEntryException,
-    InvalidIDException,
-    ListFilesException,
-    PathException,
-)
+from ..exceptions import DuplicateEntryException
 
 router = APIRouter()
 
@@ -34,17 +25,13 @@ def get_all_series(*, db: Session = Depends(get_db), series_id: int):
     "",
     response_model=schemas.Series,
     responses={
-        409: {
-            "model": schemas.HTTPExceptionSchema,
-            "description": "Duplicate Series",
-        }
+        409: {"model": schemas.HTTPExceptionSchema, "description": "Duplicate Series"},
     },
 )
 def add_series(data: schemas.MoviePropertySchema, db: Session = Depends(get_db)):
-    series = series_crud.add_series(db, data.name)
-    if series is None:
-        raise HTTPException(
-            status.HTTP_409_CONFLICT,
-            detail={"message": f"series {data.name} already in database"},
-        )
-    return series
+    try:
+        series = series_crud.add_series(db, data.name)
+    except DuplicateEntryException as e:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail={"message": str(e)})
+
+    return

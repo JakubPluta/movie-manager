@@ -17,5 +17,7 @@ export interface MovieSectionProps {
 
 export interface AdminFormValuesType {
   name: string;
+  action: "add" | "remove" | "update";
+  nameSelection: string;
   selection: "actor" | "category" | "series" | "studio";
 }

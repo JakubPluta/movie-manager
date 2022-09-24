@@ -1,10 +1,10 @@
-import AdminAddForm from "../components/AdminAddForm";
+import MoviePropertyForm from "../components/MoviePropertyForm";
 import AdminImportMovies from "../components/AdminImportMovies";
 
 const AdminPage = () => {
   return (
     <>
-      <AdminAddForm />
+      <MoviePropertyForm />
       <AdminImportMovies />
     </>
   );

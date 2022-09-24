@@ -6,6 +6,7 @@ import { useContext, useEffect, useState } from "react";
 import { MovieSectionProps } from "../types/form";
 import { Actions } from "../types/state";
 import Loading from "./Loading";
+import { MovieInfoResponseType } from "../types/api";
 
 const ActorSelector = ({ formik }: MovieSectionProps) => {
   const { state, dispatch } = useContext(StateContext);
@@ -49,12 +50,38 @@ const ActorSelector = ({ formik }: MovieSectionProps) => {
           },
         }
       );
-      const data = await response.json();
-      if (response.ok) {
-        dispatch({
-          type: Actions.SetActorsSelected,
-          payload: data.actors,
-        });
+      const data: MovieInfoResponseType = await response.json();
+
+      const actorName = state?.actorsAvailable.filter(
+        (actor) => actor.id === +id
+      )[0].name;
+
+
+       switch (response.status) {
+        case 200:
+          dispatch({
+            type: Actions.SetActorsSelected,
+            payload: data.actors,
+          });
+
+          formik.setStatus(
+            `Successfully ${selected ? "added" : "removed"} ${actorName} ${
+              selected ? "to" : "from"
+            } ${data.name}`
+          );
+          break;
+
+        case 404:
+          formik.setStatus("Server could not find actor");
+          break;
+
+        case 409:
+          formik.setStatus(`Actor ${actorName} is already selected`);
+          break;
+
+        default:
+          formik.setStatus("Unknown server error");
+          break;
       }
     }
   };

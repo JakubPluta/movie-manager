@@ -5,7 +5,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi import Depends, FastAPI, status
 from fastapi.exceptions import HTTPException
 from .. import schemas
-from ..utils import list_files
+from ..utils import list_files, parse_filename
 from ..models import Base
 from ..base_db import engine, Session
 from ..session import get_db
@@ -52,16 +52,14 @@ def get_movie(movie_id: int, db: Session = Depends(get_db)):
     "",
     response_model=List[schemas.Movie],
     responses={
-        500: {
-            "model": schemas.HTTPExceptionSchema,
-            "description": "A fatal error",
-        }
+        409: {"model": schemas.HTTPExceptionSchema, "description": "Duplicate Movie"},
+        500: {"model": schemas.HTTPExceptionSchema, "description": "Path Error"},
     },
 )
 def import_movies(db: Session = Depends(get_db)):
     try:
         files = list_files(config["imports"])
-    except Exception as e:
+    except ListFilesException as e:
         raise HTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"message": str(e)}
         )
@@ -69,10 +67,19 @@ def import_movies(db: Session = Depends(get_db)):
     movies = []
 
     for file in files:
-        name, _ = splitext(file)
-        movie = movies_crud.add_movie(db, file, name)
-        if movie is not None:
+        name, studio_id, series_id, series_number, actors = parse_filename(db, file)
+
+        try:
+            movie = movies_crud.add_movie(
+                db, file, name, studio_id, series_id, series_number, actors
+            )
             movies.append(movie)
+        except DuplicateEntryException as e:
+            raise HTTPException(status.HTTP_409_CONFLICT, detail={"message": str(e)})
+        except PathException as e:
+            raise HTTPException(
+                status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"message": str(e)}
+            )
 
     return movies
 
@@ -81,43 +88,43 @@ def import_movies(db: Session = Depends(get_db)):
     "/{movie_id}",
     response_model=schemas.Movie,
     responses={
-        404: {
-            "model": schemas.HTTPExceptionSchema,
-            "description": "Invalid ID",
-        }
+        404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"},
+        500: {"model": schemas.HTTPExceptionSchema, "description": "Path Error"},
     },
 )
 def update_movie(
     movie_id: int, data: schemas.MovieUpdateSchema, db: Session = Depends(get_db)
 ):
-    movie = movies_crud.update_movie(db, movie_id, data)
-    if movie is None:
+    try:
+        movie = movies_crud.update_movie(db, movie_id, data)
+    except InvalidIDException as e:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"message": str(e)})
+    except PathException as e:
         raise HTTPException(
-            status.HTTP_404_NOT_FOUND,
-            detail={"message": f"Movie with id {movie_id} does not exist"},
+            status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"message": str(e)}
         )
 
     return movie
 
 
-@router.delete("/{movie_id}")
+@router.delete(
+    "/{movie_id}",
+    responses={
+        404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"},
+        500: {"model": schemas.HTTPExceptionSchema, "description": "Path Error"},
+    },
+)
 def delete_movie(movie_id: int, db: Session = Depends(get_db)):
-    movie = movies_crud.get_movie_by_id(db, movie_id)
-    if movie is None:
+    try:
+        movies_crud.delete_movie(db, movie_id)
+    except InvalidIDException as e:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"message": str(e)})
+    except PathException as e:
         raise HTTPException(
-            status.HTTP_404_NOT_FOUND,
-            detail={"message": f"movie with id {movie_id} doest not exist in database"},
+            status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"message": str(e)}
         )
 
-    deleted_movie = movies_crud.delete_movie(db, movie)
-    if deleted_movie is None:
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
-            detail={
-                "message": f"Something went wrong. Couldn't delete movie {movie.name} with id {movie_id}"
-            },
-        )
-    return {"message": f"movie with {movie_id} deleted"}
+    return {"message": f"Deleted movie with ID {id}"}
 
 
 @router.post(
