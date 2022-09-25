@@ -30,6 +30,7 @@ class Actor(Base):
         secondary=movies_actors,
         back_populates="actors",
         order_by="Movie.name",
+        passive_deletes="all",
     )
 
 
@@ -44,6 +45,7 @@ class Category(Base):
         secondary=movies_categories,
         back_populates="categories",
         order_by="Movie.name",
+        passive_deletes="all",
     )
 
 
@@ -54,7 +56,7 @@ class Movie(Base):
     filename = Column(String(255), nullable=False, unique=True)
     name = Column(String(255), nullable=True)
     sort_name = Column(String(255), nullable=False, unique=True)
-    
+
     series_id = Column(
         Integer,
         ForeignKey("series.id"),
@@ -113,6 +115,7 @@ class Series(Base):
         "Movie",
         back_populates="series",
         order_by="Movie.name",
+        passive_deletes="all",
     )
 
 
@@ -122,9 +125,10 @@ class Studio(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(255), nullable=False, unique=True)
     sort_name = Column(String(255), nullable=False, unique=True)
-    
+
     movies = relationship(
         "Movie",
         back_populates="studio",
         order_by="Movie.name",
+        passive_deletes="all",
     )

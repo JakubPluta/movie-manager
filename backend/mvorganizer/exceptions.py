@@ -12,3 +12,7 @@ class ListFilesException(Exception):
 
 class PathException(Exception):
     pass
+
+
+class IntegrityConstraintException(Exception):
+    pass

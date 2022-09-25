@@ -1,11 +1,13 @@
 from sqlite3 import IntegrityError
 from sqlalchemy.orm import Session
-from typing import Optional, List
+from typing import List
 
-from .. import schemas
 from .. import models
-from .. import utils
-from ..exceptions import DuplicateEntryException, InvalidIDException
+from ..exceptions import (
+    DuplicateEntryException,
+    InvalidIDException,
+    IntegrityConstraintException,
+)
 import logging
 from sqlalchemy import func
 
@@ -42,12 +44,40 @@ def get_all_actors(db: Session) -> List[models.Actor]:
     return db.query(models.Actor).all()
 
 
-def delete_actor(db: Session, actor: models.Actor) -> models.Actor:
+def delete_actor(db: Session, actor_id: int) -> models.Actor:
+    actor = get_actor_by_id(db, actor_id)
+    if actor is None:
+        raise InvalidIDException(f"Actor ID {id} does not exist")
+
     try:
         db.delete(actor)
         db.commit()
-    except Exception as e:
-        logger.error(f"Couldn't delete actor {actor}. {e} Doing rollback")
+    except IntegrityError:
         db.rollback()
-        return e
+        raise IntegrityConstraintException(
+            f"Actor {actor.name} exists at least one movie"
+        )
+    return actor
+
+
+def update_actor(
+    db: Session,
+    id: int,
+    name: str,
+) -> models.Actor:
+    actor = get_actor_by_id(db, id)
+
+    if actor is None:
+        raise InvalidIDException(f"Actor ID {id} does not exist")
+
+    actor.name = name
+
+    try:
+        db.commit()
+        db.refresh(actor)
+    except IntegrityError:
+        db.rollback()
+
+        raise DuplicateEntryException(f"Actor {name} already exists")
+
     return actor

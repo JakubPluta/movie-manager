@@ -2,13 +2,15 @@ from sqlite3 import IntegrityError
 from sqlalchemy.orm import Session
 from typing import Optional, List
 
-from ..exceptions import DuplicateEntryException, InvalidIDException
+from ..exceptions import (
+    DuplicateEntryException,
+    InvalidIDException,
+    IntegrityConstraintException,
+)
 
-from .. import schemas
 from .. import models
 from .. import utils
 import logging
-from sqlalchemy import func
 
 logger = logging.getLogger(__name__)
 
@@ -47,8 +49,32 @@ def delete_series(db: Session, series_id: int) -> models.Series:
     try:
         db.delete(series)
         db.commit()
-    except Exception as e:
-        logger.error(f"Couldn't delete series {series}. {e} Doing rollback")
+    except IntegrityError:
         db.rollback()
-        raise e
+        raise IntegrityConstraintException(
+            f"Series {series.name} exists at least one movie"
+        )
+    return series
+
+
+def update_series(
+    db: Session,
+    id: int,
+    name: str,
+) -> models.Series:
+    series = get_series(db, id)
+
+    if series is None:
+        raise InvalidIDException(f"Series ID {id} does not exist")
+
+    series.name = name
+
+    try:
+        db.commit()
+        db.refresh(series)
+    except IntegrityError:
+        db.rollback()
+
+        raise DuplicateEntryException(f"Series {name} already exists")
+
     return series

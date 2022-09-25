@@ -2,7 +2,11 @@ from sqlite3 import IntegrityError
 from sqlalchemy.orm import Session
 from typing import Optional, List
 
-from ..exceptions import DuplicateEntryException, InvalidIDException
+from ..exceptions import (
+    DuplicateEntryException,
+    InvalidIDException,
+    IntegrityConstraintException,
+)
 
 from .. import schemas
 from .. import models
@@ -44,14 +48,38 @@ def add_studio(db: Session, name: str) -> models.Studio:
 
 
 def delete_studio(db: Session, studio_id: int) -> models.Studio:
-    studio = get_studio_by_id(id, db)
+    studio = get_studio_by_id(studio_id, db)
     if studio is None:
         raise InvalidIDException(f"Studio with id {studio_id} doesn't exists")
     try:
         db.delete(studio)
         db.commit()
-    except Exception as e:
-        logger.error(f"Couldn't delete studio {studio}. {e} Doing rollback")
+    except IntegrityError:
         db.rollback()
-        raise e
+        raise IntegrityConstraintException(
+            f"Studio {studio.name} exists at least one movie"
+        )
+    return studio
+
+
+def update_studio(
+    db: Session,
+    id: int,
+    name: str,
+) -> models.Actor:
+    studio = get_studio_by_id(id, db)
+
+    if studio is None:
+        raise InvalidIDException(f"Studio ID {id} does not exist")
+
+    studio.name = name
+
+    try:
+        db.commit()
+        db.refresh(studio)
+    except IntegrityError:
+        db.rollback()
+
+        raise DuplicateEntryException(f"Studio {name} already exists")
+
     return studio

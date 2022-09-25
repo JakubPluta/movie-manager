@@ -13,8 +13,7 @@ from ..crud import categories_crud
 from ..exceptions import (
     DuplicateEntryException,
     InvalidIDException,
-    ListFilesException,
-    PathException,
+    IntegrityConstraintException,
 )
 
 router = APIRouter()
@@ -66,3 +65,51 @@ def add_category(data: schemas.MoviePropertySchema, db: Session = Depends(get_db
             detail={"message": str(e)},
         )
     return category
+
+
+@router.put(
+    "/{id}",
+    response_model=schemas.Category,
+    responses={
+        404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"},
+        409: {
+            "model": schemas.HTTPExceptionSchema,
+            "description": "Duplicate Category",
+        },
+    },
+)
+def update_category(
+    id: int, data: schemas.MoviePropertySchema, db: Session = Depends(get_db)
+):
+    try:
+        category = categories_crud.update_category(db, id, data.name.strip())
+    except DuplicateEntryException as e:
+        raise HTTPException(status.HTTP_409_CONFLICT, detail={"message": str(e)})
+    except InvalidIDException as e:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"message": str(e)})
+
+    return category
+
+
+@router.delete(
+    "/{id}",
+    responses={
+        404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"},
+        412: {
+            "model": schemas.HTTPExceptionSchema,
+            "description": "Integrity Constraint Failed",
+        },
+    },
+)
+def delete_category(id: int, db: Session = Depends(get_db)):
+    try:
+        categories_crud.delete_category(db, id)
+    except InvalidIDException as e:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"message": str(e)})
+
+    except IntegrityConstraintException as e:
+        raise HTTPException(
+            status.HTTP_412_PRECONDITION_FAILED, detail={"message": str(e)}
+        )
+
+    return {"message": f"Deleted category ID {id}"}

@@ -1,10 +1,12 @@
 from sqlite3 import IntegrityError
 from sqlalchemy.orm import Session
 from typing import Optional, List
-from ..exceptions import DuplicateEntryException, InvalidIDException
-from .. import schemas
+from ..exceptions import (
+    DuplicateEntryException,
+    InvalidIDException,
+    IntegrityConstraintException,
+)
 from .. import models
-from .. import utils
 import logging
 from sqlalchemy import func
 
@@ -52,8 +54,32 @@ def delete_category(db: Session, category_id: int) -> models.Category:
     try:
         db.delete(category)
         db.commit()
-    except Exception as e:
-        logger.error(f"Couldn't delete category {category}. {e} Doing rollback")
+    except IntegrityError:
         db.rollback()
-        raise e
+        raise IntegrityConstraintException(
+            f"Category {category.name} exists at least one movie"
+        )
+    return category
+
+
+def update_category(
+    db: Session,
+    id: int,
+    name: str,
+) -> models.Category:
+    category = get_category(db, id)
+
+    if category is None:
+        raise InvalidIDException(f"Category ID {id} does not exist")
+
+    category.name = name
+
+    try:
+        db.commit()
+        db.refresh(category)
+    except IntegrityError:
+        db.rollback()
+
+        raise DuplicateEntryException(f"Category {name} already exists")
+
     return category
