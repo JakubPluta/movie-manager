@@ -10,6 +10,7 @@ import Loading from "./Loading";
 import { MovieInfoResponseType } from "../types/api";
 
 
+
 const CategorySelector = ({ formik }: MovieSectionProps) => {
   const [loading, setLoading] = useState(true);
   const { state, dispatch } = useContext(StateContext);
@@ -22,7 +23,7 @@ const CategorySelector = ({ formik }: MovieSectionProps) => {
       });
 
       const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_URI}/movies/movie_category?${qs}`,
+        `${process.env.REACT_APP_BACKEND_URI}/movies/movie_category/?${qs}`,
         {
           method: selected ? "POST" : "DELETE",
           headers: {
@@ -78,6 +79,9 @@ const CategorySelector = ({ formik }: MovieSectionProps) => {
         type: Actions.SetCategories,
         payload: data,
       });
+
+      // data.length > 0 && setFieldValue("movieId", data[0].id);
+
 
       setLoading(false);
     })();

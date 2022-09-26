@@ -13,6 +13,9 @@ from ..exceptions import (
     PathException,
 )
 from ..utils import rename_movie_file
+from ..config import get_logger
+
+logger = get_logger()
 
 router = APIRouter()
 
@@ -38,6 +41,7 @@ def add_series(data: schemas.MoviePropertySchema, db: Session = Depends(get_db))
     try:
         series = series_crud.add_series(db, data.name)
     except DuplicateEntryException as e:
+        logger.warn(str(e))
         raise HTTPException(status.HTTP_409_CONFLICT, detail={"message": str(e)})
 
     return series
@@ -57,8 +61,10 @@ def delete_series(id: int, db: Session = Depends(get_db)):
     try:
         series_crud.delete_series(db, id)
     except InvalidIDException as e:
+        logger.warn(str(e))
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"message": str(e)})
     except IntegrityConstraintException as e:
+        logger.warn(str(e))
         raise HTTPException(
             status.HTTP_412_PRECONDITION_FAILED, detail={"message": str(e)}
         )
@@ -86,10 +92,13 @@ def update_series(
             rename_movie_file(movie, series_current=series_name)
         db.commit()
     except DuplicateEntryException as e:
+        logger.warn(str(e))
         raise HTTPException(status.HTTP_409_CONFLICT, detail={"message": str(e)})
     except InvalidIDException as e:
+        logger.warn(str(e))
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"message": str(e)})
     except PathException as e:
+        logger.warn(str(e))
         raise HTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"message": str(e)}
         )

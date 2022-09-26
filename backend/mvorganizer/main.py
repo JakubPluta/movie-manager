@@ -13,9 +13,17 @@ from .base_db import Session
 from . import crud
 from typing import List, Optional
 from fastapi.middleware.cors import CORSMiddleware
-from .routes import series_router, studios_router, movies_router, categories_router, actors_router
+from .routes import (
+    series_router,
+    studios_router,
+    movies_router,
+    categories_router,
+    actors_router,
+)
+from .config import init, get_logger
 
-config = get_config()
+
+logger, config = init()
 
 app = FastAPI()
 
@@ -27,13 +35,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.include_router(movies_router, prefix='/movies', tags=['movies'])
-app.include_router(actors_router, prefix='/actors', tags=['actors'])
-app.include_router(categories_router, prefix='/categories', tags=['categories'])
-app.include_router(studios_router, prefix='/studios', tags=['studios'])
-app.include_router(series_router, prefix='/series', tags=['series'])
+app.include_router(movies_router, prefix="/movies", tags=["movies"])
+app.include_router(actors_router, prefix="/actors", tags=["actors"])
+app.include_router(categories_router, prefix="/categories", tags=["categories"])
+app.include_router(studios_router, prefix="/studios", tags=["studios"])
+app.include_router(series_router, prefix="/series", tags=["series"])
+
 
 @app.get("/")
 def hello():
     return "Hello from FastAPI"
-

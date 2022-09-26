@@ -17,6 +17,10 @@ from ..exceptions import (
     ListFilesException,
     PathException,
 )
+from ..config import get_logger
+
+logger = get_logger()
+
 
 config = get_config()
 
@@ -60,6 +64,7 @@ def import_movies(db: Session = Depends(get_db)):
     try:
         files = list_files(config["imports"])
     except ListFilesException as e:
+        logger.warn(str(e))
         raise HTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"message": str(e)}
         )
@@ -75,8 +80,10 @@ def import_movies(db: Session = Depends(get_db)):
             )
             movies.append(movie)
         except DuplicateEntryException as e:
+            logger.warn(str(e))
             raise HTTPException(status.HTTP_409_CONFLICT, detail={"message": str(e)})
         except PathException as e:
+            logger.warn(str(e))
             raise HTTPException(
                 status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"message": str(e)}
             )
@@ -98,8 +105,10 @@ def update_movie(
     try:
         movie = movies_crud.update_movie(db, movie_id, data)
     except InvalidIDException as e:
+        logger.warn(str(e))
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"message": str(e)})
     except PathException as e:
+        logger.warn(str(e))
         raise HTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"message": str(e)}
         )
@@ -118,8 +127,10 @@ def delete_movie(movie_id: int, db: Session = Depends(get_db)):
     try:
         movies_crud.delete_movie(db, movie_id)
     except InvalidIDException as e:
+        logger.warn(str(e))
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"message": str(e)})
     except PathException as e:
+        logger.warn(str(e))
         raise HTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"message": str(e)}
         )
@@ -143,10 +154,13 @@ def add_movie_category(movie_id: int, category_id: int, db: Session = Depends(ge
     try:
         movie = movies_crud.add_movie_category(db, movie_id, category_id)
     except DuplicateEntryException as e:
+        logger.warn(str(e))
         raise HTTPException(status.HTTP_409_CONFLICT, detail={"message": str(e)})
     except InvalidIDException as e:
+        logger.warn(str(e))
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"message": str(e)})
     except PathException as e:
+        logger.warn(str(e))
         raise HTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"message": str(e)}
         )
@@ -168,8 +182,10 @@ def delete_movie_category(
     try:
         movie = movies_crud.delete_movie_category(db, movie_id, category_id)
     except InvalidIDException as e:
+        logger.warn(str(e))
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"message": str(e)})
     except PathException as e:
+        logger.warn(str(e))
         raise HTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"message": str(e)}
         )
@@ -190,10 +206,13 @@ def add_movie_actor(movie_id: int, actor_id: int, db: Session = Depends(get_db))
     try:
         movie = movies_crud.add_movie_actor(db, movie_id, actor_id)
     except DuplicateEntryException as e:
+        logger.warn(str(e))
         raise HTTPException(status.HTTP_409_CONFLICT, detail={"message": str(e)})
     except InvalidIDException as e:
+        logger.warn(str(e))
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"message": str(e)})
     except PathException as e:
+        logger.warn(str(e))
         raise HTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"message": str(e)}
         )
@@ -215,8 +234,10 @@ def delete_movie_actor(
     try:
         movie = movies_crud.delete_movie_actor(db, movie_id, actor_id)
     except InvalidIDException as e:
+        logger.warn(str(e))
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"message": str(e)})
     except PathException as e:
+        logger.warn(str(e))
         raise HTTPException(
             status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"message": str(e)}
         )

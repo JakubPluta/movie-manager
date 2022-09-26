@@ -1,4 +1,4 @@
-import { ActorType, CategoryType, SeriesType, StudioType } from "./state";
+import { ActorType, CategoryType, SeriesType, StudioType, MovieFileType } from "./state";
 
 export interface MovieInfoResponseType {
   id: number;
@@ -10,3 +10,6 @@ export interface MovieInfoResponseType {
   series_number: number | null;
   studio: StudioType | null;
 }
+
+
+
