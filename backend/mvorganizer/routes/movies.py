@@ -5,7 +5,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi import Depends, FastAPI, status
 from fastapi.exceptions import HTTPException
 from .. import schemas
-from ..utils import list_files, parse_filename
+from ..utils import list_files, parse_filename, parse_file_info
 from ..models import Base
 from ..base_db import engine, Session
 from ..session import get_db
@@ -67,7 +67,7 @@ def import_movies(db: Session = Depends(get_db)):
     movies = []
 
     for file in files:
-        name, studio_id, series_id, series_number, actors = parse_filename(db, file)
+        name, studio_id, series_id, series_number, actors = parse_file_info(db, file)
 
         try:
             movie = movies_crud.add_movie(
@@ -128,7 +128,7 @@ def delete_movie(movie_id: int, db: Session = Depends(get_db)):
 
 
 @router.post(
-    "/movie_category",
+    "/movie_category/",
     response_model=schemas.Movie,
     responses={
         404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"},
@@ -155,7 +155,7 @@ def add_movie_category(movie_id: int, category_id: int, db: Session = Depends(ge
 
 
 @router.delete(
-    "/movie_category",
+    "/movie_category/",
     response_model=schemas.Movie,
     responses={
         404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"},

@@ -10,7 +10,9 @@ from ..exceptions import (
     DuplicateEntryException,
     InvalidIDException,
     IntegrityConstraintException,
+    PathException,
 )
+from ..utils import rename_movie_file
 
 router = APIRouter()
 
@@ -69,16 +71,26 @@ def delete_series(id: int, db: Session = Depends(get_db)):
     responses={
         404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"},
         409: {"model": schemas.HTTPExceptionSchema, "description": "Duplicate Series"},
+        500: {"model": schemas.HTTPExceptionSchema, "description": "Path Error"},
     },
 )
 def update_series(
     id: int, data: schemas.MoviePropertySchema, db: Session = Depends(get_db)
 ):
     try:
+        series = series_crud.get_series(db, id)
+        series_name = series.name
         series = series_crud.update_series(db, id, data.name.strip())
+
+        for movie in series.movies:
+            rename_movie_file(movie, series_current=series_name)
+        db.commit()
     except DuplicateEntryException as e:
         raise HTTPException(status.HTTP_409_CONFLICT, detail={"message": str(e)})
     except InvalidIDException as e:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"message": str(e)})
-
+    except PathException as e:
+        raise HTTPException(
+            status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"message": str(e)}
+        )
     return series

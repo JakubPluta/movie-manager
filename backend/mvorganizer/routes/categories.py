@@ -5,7 +5,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi import Depends, FastAPI, status
 from fastapi.exceptions import HTTPException
 from .. import schemas
-from ..utils import list_files
+from ..utils import list_files, rename_movie_file
 from ..models import Base
 from ..base_db import engine, Session
 from ..session import get_db
@@ -14,6 +14,7 @@ from ..exceptions import (
     DuplicateEntryException,
     InvalidIDException,
     IntegrityConstraintException,
+    PathException,
 )
 
 router = APIRouter()
@@ -76,18 +77,29 @@ def add_category(data: schemas.MoviePropertySchema, db: Session = Depends(get_db
             "model": schemas.HTTPExceptionSchema,
             "description": "Duplicate Category",
         },
+        500: {"model": schemas.HTTPExceptionSchema, "description": "Path Error"},
     },
 )
 def update_category(
     id: int, data: schemas.MoviePropertySchema, db: Session = Depends(get_db)
 ):
     try:
+        category = categories_crud.get_category(db, id)
+        category_name = category.name
         category = categories_crud.update_category(db, id, data.name.strip())
+
+        for movie in category.movies:
+            rename_movie_file(movie, category_current=category_name)
+        db.commit()
+
     except DuplicateEntryException as e:
         raise HTTPException(status.HTTP_409_CONFLICT, detail={"message": str(e)})
     except InvalidIDException as e:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"message": str(e)})
-
+    except PathException as e:
+        raise HTTPException(
+            status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"message": str(e)}
+        )
     return category
 
 

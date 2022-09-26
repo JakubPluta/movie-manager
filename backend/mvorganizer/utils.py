@@ -103,7 +103,13 @@ def generate_movie_filename(movie: models.Movie) -> str:
     return filename
 
 
-def rename_movie_file(movie: models.Movie) -> None:
+def rename_movie_file(
+    movie: models.Movie,
+    actor_current: Optional[str] = None,
+    series_current: Optional[str] = None,
+    category_current: Optional[str] = None,
+    studio_current: Optional[str] = None,
+) -> None:
     filename_current = movie.filename
     filename_new = generate_movie_filename(movie)
 
@@ -111,7 +117,9 @@ def rename_movie_file(movie: models.Movie) -> None:
     path_current = f"{path_base}/{filename_current}"
     path_new = f"{path_base}/{filename_new}"
 
-    if path_current != path_new:
+    path_changed: bool = path_current != path_new
+
+    if path_changed:
         if os.path.exists(path_new):
             raise PathException(
                 f"Unable to rename {movie.filename} as {filename_new} already exists"
@@ -126,20 +134,32 @@ def rename_movie_file(movie: models.Movie) -> None:
         studios: models.Studio
 
         for actor in movie.actors:
-            update_actor_link(filename_current, actor.name, False)
+            if actor_current is None:
+                actor_current = actor.name
+
+            update_actor_link(filename_current, actor_current, False)
             update_actor_link(filename_new, actor.name, True)
 
-        for category in movie.categories:
-            update_category_link(filename_current, category.name, False)
-            update_category_link(filename_new, category.name, True)
-
         if movie.series is not None:
-            update_series_link(filename_current, movie.series.name, False)
+            if series_current is None:
+                series_current = movie.series.name
+
+            update_series_link(filename_current, series_current, False)
             update_series_link(filename_new, movie.series.name, True)
 
         if movie.studio is not None:
-            update_studio_link(filename_current, movie.studio.name, False)
+            if studio_current is None:
+                studio_current = movie.studio.name
+            update_studio_link(filename_current, studio_current, False)
             update_studio_link(filename_new, movie.studio.name, True)
+
+    if path_changed or category_current is not None:
+        for category in movie.categories:
+            if category_current is None:
+                category_current = category.name
+
+            update_category_link(filename_current, category_current, False)
+            update_category_link(filename_new, category.name, True)
 
 
 def update_link(filename: str, path_link_base: str, name: str, selected: bool) -> None:
@@ -212,45 +232,68 @@ def generate_sort_name(name: str) -> str:
 
 
 def parse_filename(
-    db: Session, filename: str
-) -> Tuple[str, Optional[int], Optional[int], Optional[int], List[models.Actor]]:
+    filename: str,
+) -> Tuple[str, Optional[str], Optional[str], Optional[str], Optional[str]]:
     name, _ = os.path.splitext(filename)
-    studio_id, series_id, series_number, actors = None, None, None, None
+
+    # [Studio] {Series Series#} MovieName (Actor1, Actor2, ..., ActorN)
     regex = (
         r"^"  # Start of line
         r"(?:\[([A-Za-z0-9 .,\'-]+)\])?"  # Optional studio
         r" ?"  # Optional space
-        r"(?:{([A-Za-z0-9 .,\'-]+?)(?: ([0-9]+))?})?"  # Optional series name/number
+        r"(?:{([A-Za-z0-9 .,\'-]+?)(?: ([0-9]+))?})?"  # Optional series name/#
         r" ?"  # Optional space
-        r"([A-Za-z0-9 .,\'-]+?)?"  # Optional movie name
+        r"([A-Za-z0-9 .,\'-]+?)?"  # Optional novie Name
         r" ?"  # Optional space
         r"(?:\(([A-Za-z0-9 .,\'-]+)\))?"  # Optional actor list
         r"$"  # End of line
     )
 
+    studio_name = None
+    series_name = None
+    series_number = None
+    actor_names = None
+
     matches = re.search(regex, name)
+
     if matches is not None:
-        studio_name, series_name, series_number, name, actor_names = matches.groups()
+        (studio_name, series_name, series_number, name, actor_names) = matches.groups()
 
-        if studio_name is not None:
-            studio = get_studio_by_name(db, series_name)
-            if studio is not None:
-                studio_id = studio.id
+    return (name, studio_name, series_name, series_number, actor_names)
 
-        if series_name is not None:
-            series = get_series_by_name(db, series_name)
 
-            if series is not None:
-                series_id = series.id
+def parse_file_info(
+    db: Session, filename: str
+) -> Tuple[str, Optional[int], Optional[int], Optional[int], List[models.Actor],]:
+    studio_id = None
+    series_id = None
+    series_number = None
+    actors = None
 
-        if actor_names is not None:
-            actors = [
-                actor
-                for actor in (
-                    get_actor_by_name(db, actor_name)
-                    for actor_name in actor_names.split(", ")
-                )
-                if actor is not None
-            ]
+    (name, studio_name, series_name, series_number, actor_names) = parse_filename(
+        filename
+    )
+
+    if studio_name is not None:
+        studio = get_studio_by_name(db, studio_name)
+
+        if studio is not None:
+            studio_id = studio.id
+
+    if series_name is not None:
+        series = get_series_by_name(db, series_name)
+
+        if series is not None:
+            series_id = series.id
+
+    if actor_names is not None:
+        actors = [
+            actor
+            for actor in (
+                get_actor_by_name(db, actor_name)
+                for actor_name in actor_names.split(", ")
+            )
+            if actor is not None
+        ]
 
     return (name, studio_id, series_id, series_number, actors)

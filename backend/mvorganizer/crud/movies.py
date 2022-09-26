@@ -73,11 +73,10 @@ def add_movie(
         db.add(movie)
         db.commit()
         db.refresh(movie)
-    except Exception as e:
+    except IntegrityError as e:
         db.rollback()
         raise DuplicateEntryException(f"{movie} already exists in database")
 
-    utils.migrate_file(movie)
     return movie
 
 
