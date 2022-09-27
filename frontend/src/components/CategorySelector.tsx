@@ -61,7 +61,7 @@ const CategorySelector = ({ formik }: MovieSectionProps) => {
       }
     }
   };
-  
+
   useEffect(() => {
     (async () => {
       const response = await fetch(

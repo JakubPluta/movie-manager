@@ -1,27 +1,16 @@
 from fastapi import FastAPI
-from . import schemas
-from .utils import list_files
-
-from .config import get_config
-from .models import Base
-from .base_db import engine
-from fastapi import Depends, FastAPI, status
-from fastapi.exceptions import HTTPException
-from os.path import splitext
-from .session import get_db
-from .base_db import Session
-from . import crud
-from typing import List, Optional
 from fastapi.middleware.cors import CORSMiddleware
+
+from .base_db import engine
+from .config import init
+from .models import Base
 from .routes import (
+    actors_router,
+    categories_router,
+    movies_router,
     series_router,
     studios_router,
-    movies_router,
-    categories_router,
-    actors_router,
 )
-from .config import init, get_logger
-
 
 logger, config = init()
 
@@ -37,7 +26,9 @@ app.add_middleware(
 )
 app.include_router(movies_router, prefix="/movies", tags=["movies"])
 app.include_router(actors_router, prefix="/actors", tags=["actors"])
-app.include_router(categories_router, prefix="/categories", tags=["categories"])
+app.include_router(
+    categories_router, prefix="/categories", tags=["categories"]
+)
 app.include_router(studios_router, prefix="/studios", tags=["studios"])
 app.include_router(series_router, prefix="/series", tags=["series"])
 

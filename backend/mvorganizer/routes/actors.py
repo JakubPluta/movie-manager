@@ -1,22 +1,20 @@
-from os.path import splitext
-from typing import List, Optional
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi import APIRouter, FastAPI
-from fastapi import Depends, FastAPI, status
+from typing import List
+
+from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
+
 from .. import schemas
-from ..utils import list_files, rename_movie_file
-from ..models import Base
-from ..base_db import engine, Session
-from ..session import get_db
+from ..base_db import Session
+from ..config import get_logger
 from ..crud import actors_crud
 from ..exceptions import (
     DuplicateEntryException,
-    InvalidIDException,
     IntegrityConstraintException,
+    InvalidIDException,
     PathException,
 )
-from ..config import init, get_logger
+from ..session import get_db
+from ..utils import rename_movie_file
 
 logger = get_logger()
 router = APIRouter()
@@ -32,7 +30,9 @@ router = APIRouter()
         }
     },
 )
-def add_actor(data: schemas.MoviePropertySchema, db: Session = Depends(get_db)):
+def add_actor(
+    data: schemas.MoviePropertySchema, db: Session = Depends(get_db)
+):
     try:
         actor = actors_crud.add_actor(db, data.name)
     except DuplicateEntryException as e:
@@ -75,9 +75,18 @@ def get_actor_by_name(name: str, db: Session = Depends(get_db)):
     "/{id}",
     response_model=schemas.Actor,
     responses={
-        404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"},
-        409: {"model": schemas.HTTPExceptionSchema, "description": "Duplicate Actor"},
-        500: {"model": schemas.HTTPExceptionSchema, "description": "Path Error"},
+        404: {
+            "model": schemas.HTTPExceptionSchema,
+            "description": "Invalid ID",
+        },
+        409: {
+            "model": schemas.HTTPExceptionSchema,
+            "description": "Duplicate Actor",
+        },
+        500: {
+            "model": schemas.HTTPExceptionSchema,
+            "description": "Path Error",
+        },
     },
 )
 def update_actor(
@@ -95,10 +104,14 @@ def update_actor(
 
     except DuplicateEntryException as e:
         logger.warn(str(e))
-        raise HTTPException(status.HTTP_409_CONFLICT, detail={"message": str(e)})
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, detail={"message": str(e)}
+        )
     except InvalidIDException as e:
         logger.warn(str(e))
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"message": str(e)})
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, detail={"message": str(e)}
+        )
     except PathException as e:
         logger.warn(str(e))
         raise HTTPException(
@@ -110,7 +123,10 @@ def update_actor(
 @router.delete(
     "/{id}",
     responses={
-        404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"},
+        404: {
+            "model": schemas.HTTPExceptionSchema,
+            "description": "Invalid ID",
+        },
         412: {
             "model": schemas.HTTPExceptionSchema,
             "description": "Integrity Constraint Failed",
@@ -122,7 +138,9 @@ def delete_actor(id: int, db: Session = Depends(get_db)):
         actors_crud.delete_actor(db, id)
     except InvalidIDException as e:
         logger.warn(str(e))
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"message": str(e)})
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, detail={"message": str(e)}
+        )
     except IntegrityConstraintException as e:
         logger.warn(str(e))
         raise HTTPException(

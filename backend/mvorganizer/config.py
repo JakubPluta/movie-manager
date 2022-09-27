@@ -1,10 +1,10 @@
-from typing import Dict, Tuple
-import yaml
 import os
 import sys
 from logging import Logger, getLogger
 from logging.config import dictConfig
+from typing import Dict, Tuple
 
+import yaml
 
 DEFAULT_CONFIG_PATH = "./config.yaml"
 DEFAULT_LOGGING_PATH = "./logging.yaml"

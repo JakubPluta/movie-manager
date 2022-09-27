@@ -10,6 +10,3 @@ export interface MovieInfoResponseType {
   series_number: number | null;
   studio: StudioType | null;
 }
-
-
-

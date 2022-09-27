@@ -1,6 +1,6 @@
 import logging
-from .base_db import SessionLocal
 
+from .base_db import SessionLocal
 
 logger = logging.getLogger(__name__)
 

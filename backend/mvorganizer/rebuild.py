@@ -1,12 +1,17 @@
 import sys
 from typing import Dict, List
 
-from . import models
-from . import utils
-from .config import get_config, init
+from . import models, utils
 from .base_db import SessionLocal, engine
+from .config import init
+from .crud import (
+    actors_crud,
+    categories_crud,
+    movies_crud,
+    series_crud,
+    studios_crud,
+)
 from .exceptions import ListFilesException
-from .crud import actors_crud, movies_crud, series_crud, categories_crud, studios_crud
 
 
 def run():
@@ -37,7 +42,9 @@ def run():
             files.extend(utils.list_files(config[path]))
             logger.info("Loaded %s from link directory %s", path, config[path])
         except ListFilesException:
-            logger.warn("Unable to load %s from link directory %s", path, config[path])
+            logger.warn(
+                "Unable to load %s from link directory %s", path, config[path]
+            )
 
     movie_actors = {filename: [] for filename in movie_files}
     movie_categories = {filename: [] for filename in movie_files}
@@ -63,7 +70,9 @@ def run():
                 # a link directory file is pointing at a non-existent movie file
                 if file in properties:
                     properties[file].append(name)
-                    logger.info("Associated movie %s with %s in %s", file, name, path)
+                    logger.info(
+                        "Associated movie %s with %s in %s", file, name, path
+                    )
 
     # get the remaining movie data from the movie files
     movie_name = {filename: None for filename in movie_files}
@@ -95,7 +104,9 @@ def run():
             logger.info("Parsed series %s from file %s", series_name, file)
         if series_number is not None:
             movie_series_number[file] = series_number
-            logger.info("Parsed series number %s from file %s", series_number, file)
+            logger.info(
+                "Parsed series number %s from file %s", series_number, file
+            )
 
         if studio_name is not None:
             studios.append(studio_name)
@@ -118,7 +129,8 @@ def run():
     category_by_name = {
         category.name: category
         for category in [
-            categories_crud.add_category(db, category) for category in categories
+            categories_crud.add_category(db, category)
+            for category in categories
         ]
     }
     logger.info("Imported categories into database")
@@ -129,7 +141,9 @@ def run():
     logger.info("Imported series into database")
     studio_by_name = {
         studio.name: studio
-        for studio in [studios_crud.add_studio(db, studio) for studio in studios]
+        for studio in [
+            studios_crud.add_studio(db, studio) for studio in studios
+        ]
     }
     logger.info("Imported studios into database")
 
@@ -157,11 +171,14 @@ def run():
         # deduplicate actors and categories
         # create a list of DB objects for the movie associations
         movie_actors_set = set(movie_actors[filename])
-        actors_list = [actor_by_name[actor_name] for actor_name in movie_actors_set]
+        actors_list = [
+            actor_by_name[actor_name] for actor_name in movie_actors_set
+        ]
 
         movie_categories_set = set(movie_categories[filename])
         categories_list = [
-            category_by_name[category_name] for category_name in movie_categories_set
+            category_by_name[category_name]
+            for category_name in movie_categories_set
         ]
 
         # add the movie to the database

@@ -1,18 +1,16 @@
+import logging
 from sqlite3 import IntegrityError
-from sqlalchemy.orm import Session
-from typing import Optional, List
+from typing import List
 
+from sqlalchemy import func
+from sqlalchemy.orm import Session
+
+from .. import models, utils
 from ..exceptions import (
     DuplicateEntryException,
-    InvalidIDException,
     IntegrityConstraintException,
+    InvalidIDException,
 )
-
-from .. import schemas
-from .. import models
-from .. import utils
-import logging
-from sqlalchemy import func
 
 logger = logging.getLogger(__name__)
 

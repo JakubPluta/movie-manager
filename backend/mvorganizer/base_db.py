@@ -1,8 +1,7 @@
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy import create_engine, event
 from sqlalchemy.engine.base import Engine
-from sqlalchemy import event
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import Session, sessionmaker
 
 
 def _fk_pragma_on_connect(e: Engine, _):
@@ -18,6 +17,8 @@ engine: Engine = create_engine(
 event.listen(engine, "connect", _fk_pragma_on_connect)
 
 
-SessionLocal: Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal: Session = sessionmaker(
+    autocommit=False, autoflush=False, bind=engine
+)
 
 Base = declarative_base()

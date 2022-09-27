@@ -1,17 +1,16 @@
-from sqlite3 import IntegrityError
-from sqlalchemy.orm import Session
-from typing import Optional, List
-
-from .. import schemas
-from .. import models
-from .. import utils
 import logging
+from sqlite3 import IntegrityError
+from typing import List, Optional
+
 from sqlalchemy import func
-from .categories import get_category, get_category_by_name
-from .actors import get_actor_by_id, get_actor_by_name
-from .series import get_series, get_series_by_name
-from .studios import get_studio_by_id, get_studio_by_name
+from sqlalchemy.orm import Session
+
+from .. import models, schemas, utils
 from ..exceptions import DuplicateEntryException, InvalidIDException
+from .actors import get_actor_by_id
+from .categories import get_category
+from .series import get_series
+from .studios import get_studio_by_id
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +79,9 @@ def add_movie(
     return movie
 
 
-def update_movie(db: Session, id: int, data: schemas.MovieUpdateSchema) -> models.Movie:
+def update_movie(
+    db: Session, id: int, data: schemas.MovieUpdateSchema
+) -> models.Movie:
     movie = get_movie_by_id(db, id)
     if movie is None:
         raise InvalidIDException(f"Movie ID {id} does not exist")
@@ -104,7 +105,9 @@ def update_movie(db: Session, id: int, data: schemas.MovieUpdateSchema) -> model
             else None
         )
         series_new = (
-            get_series(db, data.series_id).name if data.series_id is not None else None
+            get_series(db, data.series_id).name
+            if data.series_id is not None
+            else None
         )
 
         if data.series_id is None:
@@ -193,7 +196,9 @@ def add_movie_actor(db: Session, movie_id: int, actor_id: int) -> models.Movie:
     return movie
 
 
-def delete_movie_actor(db: Session, movie_id: int, actor_id: int) -> models.Movie:
+def delete_movie_actor(
+    db: Session, movie_id: int, actor_id: int
+) -> models.Movie:
     movie = get_movie_by_id(db, movie_id)
 
     if movie is None:
@@ -216,7 +221,9 @@ def delete_movie_actor(db: Session, movie_id: int, actor_id: int) -> models.Movi
     return movie
 
 
-def add_movie_category(db: Session, movie_id: int, category_id: int) -> models.Movie:
+def add_movie_category(
+    db: Session, movie_id: int, category_id: int
+) -> models.Movie:
     movie = get_movie_by_id(db, movie_id)
     category = get_category(db, category_id)
     if movie is None:
@@ -245,7 +252,9 @@ def add_movie_category(db: Session, movie_id: int, category_id: int) -> models.M
     return movie
 
 
-def delete_movie_category(db: Session, movie_id: int, category_id: int) -> models.Movie:
+def delete_movie_category(
+    db: Session, movie_id: int, category_id: int
+) -> models.Movie:
     movie = get_movie_by_id(db, movie_id)
 
     if movie is None:

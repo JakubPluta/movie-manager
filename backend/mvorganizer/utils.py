@@ -1,19 +1,16 @@
 import logging
 import os
-from pathlib import Path
-from typing import List
-from fastapi import status
-from fastapi.exceptions import HTTPException
-from .base_db import Session
-from .exceptions import ListFilesException, PathException, DuplicateEntryException
-from . import models
-from .config import get_config
 import re
-from typing import List, Tuple, Optional, Any
+from pathlib import Path
+from typing import List, Optional, Tuple
+
+from . import models
+from .base_db import Session
+from .config import get_config
+from .crud.actors import get_actor_by_name
 from .crud.series import get_series_by_name
 from .crud.studios import get_studio_by_name
-from .crud.actors import get_actor_by_name
-from .crud.categories import get_category_by_name
+from .exceptions import ListFilesException, PathException
 
 config = get_config()
 
@@ -162,7 +159,9 @@ def rename_movie_file(
             update_category_link(filename_new, category.name, True)
 
 
-def update_link(filename: str, path_link_base: str, name: str, selected: bool) -> None:
+def update_link(
+    filename: str, path_link_base: str, name: str, selected: bool
+) -> None:
     path_movies = os.path.abspath(config["movies"])
     path_file = f"{path_movies}/{filename}"
 
@@ -175,19 +174,25 @@ def update_link(filename: str, path_link_base: str, name: str, selected: bool) -
                 path = Path(path_base)
                 path.mkdir(parents=True, exist_ok=True)
             except:
-                raise PathException(f"Link directory {path_base} could not be created")
+                raise PathException(
+                    f"Link directory {path_base} could not be created"
+                )
 
         if not os.path.lexists(path_link):
             try:
                 os.symlink(path_file, path_link)
             except:
-                raise PathException(f"Unable to create link {path_file} -> {path_link}")
+                raise PathException(
+                    f"Unable to create link {path_file} -> {path_link}"
+                )
     else:
         if os.path.lexists(path_link):
             try:
                 os.remove(path_link)
             except:
-                raise PathException(f"Unable to delete link {path_file} -> {path_link}")
+                raise PathException(
+                    f"Unable to delete link {path_file} -> {path_link}"
+                )
 
             try:
                 os.rmdir(path_base)
@@ -257,22 +262,38 @@ def parse_filename(
     matches = re.search(regex, name)
 
     if matches is not None:
-        (studio_name, series_name, series_number, name, actor_names) = matches.groups()
+        (
+            studio_name,
+            series_name,
+            series_number,
+            name,
+            actor_names,
+        ) = matches.groups()
 
     return (name, studio_name, series_name, series_number, actor_names)
 
 
 def parse_file_info(
     db: Session, filename: str
-) -> Tuple[str, Optional[int], Optional[int], Optional[int], List[models.Actor],]:
+) -> Tuple[
+    str,
+    Optional[int],
+    Optional[int],
+    Optional[int],
+    List[models.Actor],
+]:
     studio_id = None
     series_id = None
     series_number = None
     actors = None
 
-    (name, studio_name, series_name, series_number, actor_names) = parse_filename(
-        filename
-    )
+    (
+        name,
+        studio_name,
+        series_name,
+        series_number,
+        actor_names,
+    ) = parse_filename(filename)
 
     if studio_name is not None:
         studio = get_studio_by_name(db, studio_name)

@@ -1,19 +1,20 @@
 from typing import List
-from fastapi import APIRouter
-from fastapi import Depends, status
+
+from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
+
 from .. import schemas
 from ..base_db import Session
-from ..session import get_db
+from ..config import get_logger
 from ..crud import studios_crud
 from ..exceptions import (
     DuplicateEntryException,
-    InvalidIDException,
     IntegrityConstraintException,
+    InvalidIDException,
     PathException,
 )
+from ..session import get_db
 from ..utils import rename_movie_file
-from ..config import get_logger
 
 logger = get_logger()
 
@@ -45,7 +46,9 @@ def get_studio_by_name(*, db: Session = Depends(get_db), name: str):
         }
     },
 )
-def add_studio(data: schemas.MoviePropertySchema, db: Session = Depends(get_db)):
+def add_studio(
+    data: schemas.MoviePropertySchema, db: Session = Depends(get_db)
+):
     try:
         studio = studios_crud.add_studio(db, data.name)
     except DuplicateEntryException as e:
@@ -60,7 +63,10 @@ def add_studio(data: schemas.MoviePropertySchema, db: Session = Depends(get_db))
 @router.delete(
     "/{id}",
     responses={
-        404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"},
+        404: {
+            "model": schemas.HTTPExceptionSchema,
+            "description": "Invalid ID",
+        },
         412: {
             "model": schemas.HTTPExceptionSchema,
             "description": "Integrity Constraint Failed",
@@ -72,7 +78,9 @@ def delete_studio(id: int, db: Session = Depends(get_db)):
         studios_crud.delete_studio(db, id)
     except InvalidIDException as e:
         logger.warn(str(e))
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"message": str(e)})
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, detail={"message": str(e)}
+        )
     except IntegrityConstraintException as e:
         logger.warn(str(e))
         raise HTTPException(
@@ -85,9 +93,18 @@ def delete_studio(id: int, db: Session = Depends(get_db)):
     "/{id}",
     response_model=schemas.Studio,
     responses={
-        404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"},
-        409: {"model": schemas.HTTPExceptionSchema, "description": "Duplicate Studio"},
-        500: {"model": schemas.HTTPExceptionSchema, "description": "Path Error"},
+        404: {
+            "model": schemas.HTTPExceptionSchema,
+            "description": "Invalid ID",
+        },
+        409: {
+            "model": schemas.HTTPExceptionSchema,
+            "description": "Duplicate Studio",
+        },
+        500: {
+            "model": schemas.HTTPExceptionSchema,
+            "description": "Path Error",
+        },
     },
 )
 def update_studio(
@@ -106,10 +123,14 @@ def update_studio(
         db.commit()
     except DuplicateEntryException as e:
         logger.warn(str(e))
-        raise HTTPException(status.HTTP_409_CONFLICT, detail={"message": str(e)})
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, detail={"message": str(e)}
+        )
     except InvalidIDException as e:
         logger.warn(str(e))
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"message": str(e)})
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, detail={"message": str(e)}
+        )
     except PathException as e:
         logger.warn(str(e))
         raise HTTPException(

@@ -1,22 +1,20 @@
-from os.path import splitext
 from typing import List, Optional
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi import APIRouter, FastAPI
-from fastapi import Depends, FastAPI, status
+
+from fastapi import APIRouter, Depends, status
 from fastapi.exceptions import HTTPException
+
 from .. import schemas
-from ..utils import list_files, rename_movie_file
-from ..models import Base
-from ..base_db import engine, Session
-from ..session import get_db
+from ..base_db import Session
+from ..config import get_logger
 from ..crud import categories_crud
 from ..exceptions import (
     DuplicateEntryException,
-    InvalidIDException,
     IntegrityConstraintException,
+    InvalidIDException,
     PathException,
 )
-from ..config import get_logger
+from ..session import get_db
+from ..utils import rename_movie_file
 
 logger = get_logger()
 
@@ -34,7 +32,9 @@ def get_category(category_id: int, db: Session = Depends(get_db)):
     if category is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
-            detail={"message": f"Category with id {category_id} was not found"},
+            detail={
+                "message": f"Category with id {category_id} was not found"
+            },
         )
     return category
 
@@ -60,7 +60,9 @@ def get_category_by_name(name: str, db: Session = Depends(get_db)):
         }
     },
 )
-def add_category(data: schemas.MoviePropertySchema, db: Session = Depends(get_db)):
+def add_category(
+    data: schemas.MoviePropertySchema, db: Session = Depends(get_db)
+):
     try:
         category = categories_crud.add_category(db, data.name)
     except DuplicateEntryException as e:
@@ -76,12 +78,18 @@ def add_category(data: schemas.MoviePropertySchema, db: Session = Depends(get_db
     "/{id}",
     response_model=schemas.Category,
     responses={
-        404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"},
+        404: {
+            "model": schemas.HTTPExceptionSchema,
+            "description": "Invalid ID",
+        },
         409: {
             "model": schemas.HTTPExceptionSchema,
             "description": "Duplicate Category",
         },
-        500: {"model": schemas.HTTPExceptionSchema, "description": "Path Error"},
+        500: {
+            "model": schemas.HTTPExceptionSchema,
+            "description": "Path Error",
+        },
     },
 )
 def update_category(
@@ -98,10 +106,14 @@ def update_category(
 
     except DuplicateEntryException as e:
         logger.warn(str(e))
-        raise HTTPException(status.HTTP_409_CONFLICT, detail={"message": str(e)})
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, detail={"message": str(e)}
+        )
     except InvalidIDException as e:
         logger.warn(str(e))
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"message": str(e)})
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, detail={"message": str(e)}
+        )
     except PathException as e:
         logger.warn(str(e))
         raise HTTPException(
@@ -113,7 +125,10 @@ def update_category(
 @router.delete(
     "/{id}",
     responses={
-        404: {"model": schemas.HTTPExceptionSchema, "description": "Invalid ID"},
+        404: {
+            "model": schemas.HTTPExceptionSchema,
+            "description": "Invalid ID",
+        },
         412: {
             "model": schemas.HTTPExceptionSchema,
             "description": "Integrity Constraint Failed",
@@ -125,7 +140,9 @@ def delete_category(id: int, db: Session = Depends(get_db)):
         categories_crud.delete_category(db, id)
     except InvalidIDException as e:
         logger.warn(str(e))
-        raise HTTPException(status.HTTP_404_NOT_FOUND, detail={"message": str(e)})
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND, detail={"message": str(e)}
+        )
 
     except IntegrityConstraintException as e:
         logger.warn(str(e))

@@ -3,7 +3,6 @@ from sqlalchemy.orm import relationship
 
 from .base_db import Base
 
-
 movies_actors = Table(
     "movie_actors",
     Base.metadata,
