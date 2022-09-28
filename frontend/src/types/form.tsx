@@ -1,23 +1,13 @@
-import { FormikProps } from "formik";
-
-export interface MainPageFormValuesType {
-  movieId: string | undefined;
-  movieName: string;
-  movieStudioId: string | undefined;
-  movieSeriesId: string | undefined;
-  movieSeriesNumber: string;
-  movieActorAvailableId: string | undefined;
-  movieActorSelectedId: string | undefined;
-  movieCategories: string[];
-}
-
-export interface MovieSectionProps {
-  formik: FormikProps<MainPageFormValuesType>;
-}
-
 export interface AdminFormValuesType {
   name: string;
   action: "add" | "remove" | "update";
   nameSelection: string;
   selection: "actor" | "category" | "series" | "studio";
+}
+export interface MainPageFormValuesType {
+  movieName: string;
+  movieStudioId: string;
+  movieSeriesId: string;
+  movieSeriesNumber: string;
+  movieCategories: string[];
 }

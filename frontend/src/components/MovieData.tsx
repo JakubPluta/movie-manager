@@ -1,44 +1,35 @@
-import { useContext, useEffect, useState } from "react";
-import { Field } from "formik";
+import { Field, useFormikContext } from "formik";
 
 import Loading from "./Loading";
 import MovieDataFormRow from "./MovieDataFormRow";
 import MovieSection from "./MovieSection";
 
-import StateContext from "../state/StateContext";
+import { useAppSelector } from "../state/hooks";
+import {
+  useMoviesQuery,
+  useSeriesQuery,
+  useStudiosQuery,
+} from "../state/MovieManagerApi";
 
-import { MovieSectionProps } from "../types/form";
-import { Actions } from "../types/state";
+import { MainPageFormValuesType } from "../types/form";
 
-const MovieData = ({ formik }: MovieSectionProps) => {
-  const [loading, setLoading] = useState(true);
-  const { state, dispatch } = useContext(StateContext);
 
-  useEffect(() => {
-    (async () => {
-      const helper = async (endpoint: string, type: Actions) => {
-        const response = await fetch(
-          `${process.env.REACT_APP_BACKEND_URI}/${endpoint}`
-        );
-        const payload = await response.json();
 
-        dispatch({
-          type,
-          payload,
-        });
-      };
+const MovieData = () => {
+  const formik = useFormikContext<MainPageFormValuesType>();
 
-      await helper("series", Actions.SetSeries);
-      await helper("studios", Actions.SetStudios);
+  const movieId = useAppSelector((state) => state.selectBox.movieId);
 
-      setLoading(false);
-    })();
-  }, [dispatch]);
+  const { data: movies } = useMoviesQuery();
+  const { data: series, isLoading: isSeriesLoading } = useSeriesQuery();
+  const { data: studios, isLoading: isStudiosLoading } = useStudiosQuery();
 
   const onRemoveMovie = async () => {
-    if (formik.values.movieId) {
-      const id = +formik.values.movieId;
-      const filename = state?.movies.filter((m) => m.id === id)[0].filename;
+    if (movieId) {
+      const id = +movieId
+       const filename = movies?.filter((movie) => movie.id === +movieId)[0]
+        .filename;
+
 
       if (window.confirm(`Do you really want to remove ${filename}`)) {
         const response = await fetch(
@@ -53,22 +44,15 @@ const MovieData = ({ formik }: MovieSectionProps) => {
         );
         await response.json();
 
-        if (response.ok) {
-          formik.setStatus(`Successfully deleted ${filename}`);
+          if (response.ok) {
+          formik.setStatus(`Successfully removed ${filename}`);
           formik.resetForm();
-
-           dispatch({
-            type: Actions.SetActorsSelected,
-            payload: [],
-          });
-
         } else {
-          formik.setStatus(`Error occured while removing ${filename}`);
+          formik.setStatus(`Error removing ${filename}`);
         }
       }
     }
   };
-
   return (
     <MovieSection title="Movie Data">
       <div className="h-64">
@@ -84,7 +68,7 @@ const MovieData = ({ formik }: MovieSectionProps) => {
               </MovieDataFormRow>
 
               <MovieDataFormRow title="Studio">
-                {loading ? (
+                {isStudiosLoading ? (
                   <Loading />
                 ) : (
                   <select
@@ -92,7 +76,7 @@ const MovieData = ({ formik }: MovieSectionProps) => {
                     {...formik.getFieldProps("movieStudioId")}
                   >
                     <option value="">None</option>
-                    {state?.studios.map((studio) => (
+                    {studios?.map((studio) => (
                       <option key={studio.id} value={studio.id}>
                         {studio.name}
                       </option>
@@ -102,7 +86,7 @@ const MovieData = ({ formik }: MovieSectionProps) => {
               </MovieDataFormRow>
 
               <MovieDataFormRow title="Series">
-                {loading ? (
+                {isSeriesLoading ? (
                   <Loading />
                 ) : (
                   <select
@@ -110,7 +94,7 @@ const MovieData = ({ formik }: MovieSectionProps) => {
                     {...formik.getFieldProps("movieSeriesId")}
                   >
                     <option value="">None</option>
-                    {state?.series.map((series) => (
+                    {series?.map((series) => (
                       <option key={series.id} value={series.id}>
                         {series.name}
                       </option>
@@ -126,6 +110,7 @@ const MovieData = ({ formik }: MovieSectionProps) => {
                   name="movieSeriesNumber"
                 />
               </MovieDataFormRow>
+
               <div className="flex my-4">
                 <button
                   className="movie-data-button bg-green-700 hover:bg-green-600"
@@ -142,6 +127,7 @@ const MovieData = ({ formik }: MovieSectionProps) => {
                   Remove
                 </button>
               </div>
+
               {formik.status && (
                 <div>
                   <p className="font-semibold text-center">{formik.status}</p>

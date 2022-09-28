@@ -1,19 +1,18 @@
-import React, { useReducer } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Container from "./components/Container";
+import { Provider } from "react-redux";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+
 import AdminPage from "./pages/AdminPage";
 import MainPage from "./pages/MainPage";
-import { initialState } from "./state/initialState";
-import { reducer } from "./state/reducer";
-import StateContext from "./state/StateContext";
+
+import Container from "./components/Container";
 import NavBar from "./components/NavBar";
 
-function App() {
-  const [state, dispatch] = useReducer(reducer, initialState);
+import { store } from "./state/store";
 
+function App() {
   return (
     <BrowserRouter>
-      <StateContext.Provider value={{ state, dispatch }}>
+      <Provider store = {store}>
         <Container>
           <NavBar />
           <Routes>
@@ -25,7 +24,8 @@ function App() {
             <Route path="/admin" element={<AdminPage />} />
           </Routes>
         </Container>
-      </StateContext.Provider>
+
+        </Provider>
     </BrowserRouter>
   );
 }

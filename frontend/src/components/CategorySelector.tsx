@@ -1,24 +1,26 @@
-import React from "react";
-import StateContext from "../state/StateContext";
-import MovieSection from "./MovieSection";
-import { useContext } from "react";
-import { MovieSectionProps } from "../types/form";
-import { Field } from "formik";
-import { useEffect, useState } from "react";
-import { Actions } from "../types/state";
+
+import { Field, useFormikContext } from "formik";
+
 import Loading from "./Loading";
-import { MovieInfoResponseType } from "../types/api";
+import MovieSection from "./MovieSection";
+
+import { useAppSelector } from "../state/hooks";
+import { useCategoriesQuery } from "../state/MovieManagerApi";
+
+import { MovieType } from "../types/api";
+import { MainPageFormValuesType } from "../types/form";
 
 
+const CategorySelector = () => {
+  const formik = useFormikContext<MainPageFormValuesType>();
+  const movieId = useAppSelector((state) => state.selectBox.movieId);
 
-const CategorySelector = ({ formik }: MovieSectionProps) => {
-  const [loading, setLoading] = useState(true);
-  const { state, dispatch } = useContext(StateContext);
+  const { data: categories, isLoading } = useCategoriesQuery();
 
   const onUpdateCategory = async (id: string, selected: boolean) => {
-    if (formik.values.movieId) {
+    if (movieId) {
       const qs = new URLSearchParams({
-        movie_id: formik.values.movieId,
+        movie_id: movieId,
         category_id: id,
       });
 
@@ -32,9 +34,9 @@ const CategorySelector = ({ formik }: MovieSectionProps) => {
           },
         }
       );
-      const data: MovieInfoResponseType = await response.json();
+      const data: MovieType = await response.json();
 
-      const categoryName = state?.categories.filter(
+      const categoryName = categories?.filter(
         (category) => category.id === +id
       )[0].name;
 
@@ -62,39 +64,14 @@ const CategorySelector = ({ formik }: MovieSectionProps) => {
     }
   };
 
-  useEffect(() => {
-    (async () => {
-      const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_URI}/categories`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-        }
-      );
-      const data = await response.json();
-
-      dispatch({
-        type: Actions.SetCategories,
-        payload: data,
-      });
-
-      // data.length > 0 && setFieldValue("movieId", data[0].id);
-
-
-      setLoading(false);
-    })();
-  }, [dispatch]);
-
   return (
     <MovieSection title="Categories">
       <div className="h-72">
-        {loading ? (
+        {isLoading ? (
           <Loading />
         ) : (
           <div className="gap-1 grid grid-cols-3 overflow-y-auto">
-            {state?.categories.map((category) => (
+            {categories?.map((category) => (
               <div key={category.id}>
                 <label>
                   <Field

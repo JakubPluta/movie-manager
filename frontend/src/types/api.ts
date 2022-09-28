@@ -1,6 +1,11 @@
-import { ActorType, CategoryType, SeriesType, StudioType, MovieFileType } from "./state";
+export interface BaseMovieProperty {
+  id: number;
+  name: string;
+}
 
-export interface MovieInfoResponseType {
+export interface ActorType extends BaseMovieProperty {}
+export interface CategoryType extends BaseMovieProperty {}
+export interface MovieType {
   id: number;
   filename: string;
   name: string | null;
@@ -10,3 +15,11 @@ export interface MovieInfoResponseType {
   series_number: number | null;
   studio: StudioType | null;
 }
+
+export interface MovieFileType {
+  id: number;
+  filename: string;
+}
+
+export interface SeriesType extends BaseMovieProperty {}
+export interface StudioType extends BaseMovieProperty {}

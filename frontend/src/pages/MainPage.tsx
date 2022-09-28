@@ -1,32 +1,32 @@
-import React, { useContext, useState } from "react";
-import MovieList from "../components/MovieList";
-import MovieData from "../components/MovieData";
+import { Formik, FormikHelpers } from "formik";
+
 import ActorSelector from "../components/ActorSelector";
 import CategorySelector from "../components/CategorySelector";
-import StateContext from "../state/StateContext";
-import { Formik, FormikHelpers } from "formik";
+import MovieData from "../components/MovieData";
+import MovieList from "../components/MovieList";
+
+import { useAppSelector } from "../state/hooks";
+
 import { MainPageFormValuesType } from "../types/form";
 
 const initialValues: MainPageFormValuesType = {
-  movieId: undefined,
   movieName: "",
-  movieStudioId: undefined,
-  movieSeriesId: undefined,
+  movieStudioId: "",
+  movieSeriesId: "",
   movieSeriesNumber: "",
-  movieActorAvailableId: undefined,
-  movieActorSelectedId: undefined,
   movieCategories: [],
 };
 
 const MainPage = () => {
-  const { state } = useContext(StateContext);
-
+  const movieId = useAppSelector(
+    (state) => state.selectBox.movieId
+  );
   const onSubmit = async (
     values: MainPageFormValuesType,
     helpers: FormikHelpers<MainPageFormValuesType>
   ) => {
-    if (values.movieId) {
-      const body = {
+    if (movieId) {
+            const body = {
         name: values.movieName ? values.movieName : null,
         series_id: values.movieSeriesId ? +values.movieSeriesId : null,
         series_number: values.movieSeriesNumber
@@ -36,7 +36,7 @@ const MainPage = () => {
       };
 
       const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_URI}/movies/${values.movieId}`,
+        `${process.env.REACT_APP_BACKEND_URI}/movies/${movieId}`,
 
         {
           method: "PUT",
@@ -58,24 +58,24 @@ const MainPage = () => {
 
   return (
     <Formik initialValues={initialValues} onSubmit={onSubmit}>
-      {(formik) => {
+      {() => {
         return (
           <>
             <div className="lg:flex">
               <div className="m-2 lg:w-3/5">
-                <MovieList formik={formik} />
+                <MovieList />
               </div>
               <div className="m-2 lg:w-2/5">
-                <MovieData formik={formik} />
+                <MovieData />
               </div>
             </div>
 
             <div className="lg:flex">
               <div className="m-2 lg:w-1/2">
-                <ActorSelector formik={formik} />
+                <ActorSelector  />
               </div>
               <div className="m-2 lg:w-1/2">
-                <CategorySelector formik={formik} />
+                <CategorySelector />
               </div>
             </div>
           </>

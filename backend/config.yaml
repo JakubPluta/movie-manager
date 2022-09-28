@@ -6,3 +6,5 @@ categories: ./db/categories
 actors: ./db/actors
 series: ./db/series
 studios: ./db/studios
+
+sqlite_db: ./movies.db

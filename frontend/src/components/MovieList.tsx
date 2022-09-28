@@ -1,107 +1,76 @@
-import { useContext, useEffect, useState } from "react";
+import { useEffect } from "react";
+import { skipToken } from "@reduxjs/toolkit/dist/query";
+import { useFormikContext } from "formik";
 
 import Loading from "./Loading";
 import MovieSection from "./MovieSection";
 
-import StateContext from "../state/StateContext";
+import { useAppDispatch, useAppSelector } from "../state/hooks";
+import { useMovieQuery, useMoviesQuery } from "../state/MovieManagerApi";
+import { setMovieId } from "../state/SelectBoxSlice";
 
-import { MovieInfoResponseType } from "../types/api";
-import { MovieSectionProps } from "../types/form";
-import { Actions } from "../types/state";
+import { MainPageFormValuesType } from "../types/form";
 
-const MovieList = ({ formik }: MovieSectionProps) => {
-  const [loading, setLoading] = useState(true);
-  const { state, dispatch } = useContext(StateContext);
-  const {
-      setFieldValue,
-      setStatus,
-      values: { movieId },
-    } = formik;
+
+const MovieList = () => {
+ const { setFieldValue, setStatus } =
+    useFormikContext<MainPageFormValuesType>();
+
+  const reduxDispatch = useAppDispatch();
+  const movieId = useAppSelector((state) => state.selectBox.movieId);
+  const { data: movie } = useMovieQuery(movieId ? movieId : skipToken);
+  const { data: movies, isLoading, isSuccess } = useMoviesQuery();
+
+
+  useEffect(() => {
+    if (movieId === "" && isSuccess && movies) {
+      movies.length > 0 && reduxDispatch(setMovieId(movies[0].id.toString()));
+    }
+  }, [movieId, movies, isSuccess, reduxDispatch]);
+
 
   useEffect(() => {
     (async () => {
-      const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_URI}/movies`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-        }
-      );
+      if (movie) {
+        setFieldValue("movieName", movie.name ?? "");
 
-      const data = await response.json();
-
-      dispatch({
-        type: Actions.SetMovies,
-        payload: data,
-      });
-      data.length > 0 && setFieldValue("movieId", data[0].id);
-      setLoading(false);
-    })();
-  }, [dispatch, setFieldValue]);
-
-  useEffect(() => {
-    (async () => {
-      if (movieId) {
-        const id = +movieId;
-        const response = await fetch(
-          `${process.env.REACT_APP_BACKEND_URI}/movies/${id}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-          }
+        setFieldValue(
+          "movieSeriesId",
+          movie.series ? movie.series.id.toString() : ""
         );
-        const data: MovieInfoResponseType = await response.json();
 
-         if (response.ok) {
-          setFieldValue("movieName", data.name ?? "");
-          setFieldValue(
-            "movieSeriesId",
-            data.series ? data.series.id.toString() : ""
-          );
-          setFieldValue(
-            "movieSeriesNumber",
-            data.series_number ? data.series_number.toString() : ""
-          );
-          setFieldValue(
-            "movieStudioId",
-            data.studio ? data.studio.id.toString() : ""
-          );
-          setFieldValue(
-            "movieCategories",
-            data.categories.map((category) => category.id.toString())
-          );
+        setFieldValue(
+          "movieSeriesNumber",
+          movie.series_number ? movie.series_number.toString() : ""
+        );
 
-          dispatch({
-            type: Actions.SetActorsSelected,
-            payload: data.actors,
-          });
+        setFieldValue(
+          "movieStudioId",
+          movie.studio ? movie.studio.id.toString() : ""
+        );
 
-          setStatus("");
-        }
+        setFieldValue(
+          "movieCategories",
+          movie.categories.map((category) => category.id.toString())
+        );
       }
     })();
-  }, [dispatch, movieId, setStatus, setFieldValue]);
+  }, [movie, setStatus, setFieldValue]);
 
   return (
     <MovieSection title="Movie List">
-      {loading ? (
+      {isLoading  ? (
         <div className="h-64">
           <Loading />
         </div>
       ) : (
-        <select
+           <select
           className="h-64 w-full"
           size={10}
-          name="movieId"
-          onChange={formik.handleChange}
+          defaultValue={movies && movies[0]?.id}
+          onChange={(e) => reduxDispatch(setMovieId(e.target.value))}
         >
-          {state?.movies.map((movie) => (
+          {movies?.map((movie) => (
             <option key={movie.id} value={movie.id}>
               {movie.filename}
             </option>
