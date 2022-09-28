@@ -1,93 +1,97 @@
-
+import { FetchBaseQueryError, skipToken } from "@reduxjs/toolkit/dist/query";
 import { Field, useFormikContext } from "formik";
 
 import Loading from "./Loading";
 import MovieSection from "./MovieSection";
 
 import { useAppSelector } from "../state/hooks";
-import { useCategoriesQuery } from "../state/MovieManagerApi";
+import {
+  useCategoriesQuery,
+  useMovieCategoryAddMutation,
+  useMovieCategoryDeleteMutation,
+  useMovieQuery,
+} from "../state/MovieManagerApi";
 
-import { MovieType } from "../types/api";
+import { HTTPExceptionType, MovieType } from "../types/api";
 import { MainPageFormValuesType } from "../types/form";
 
-
 const CategorySelector = () => {
-  const formik = useFormikContext<MainPageFormValuesType>();
+   const formik = useFormikContext<MainPageFormValuesType>();
+
   const movieId = useAppSelector((state) => state.selectBox.movieId);
 
+  const { data: movie } = useMovieQuery(movieId ?? skipToken);
   const { data: categories, isLoading } = useCategoriesQuery();
 
-  const onUpdateCategory = async (id: string, selected: boolean) => {
-    if (movieId) {
-      const qs = new URLSearchParams({
-        movie_id: movieId,
-        category_id: id,
-      });
+  const [movieCategoryAddTrigger] = useMovieCategoryAddMutation();
+  const [movieCategoryDeleteTrigger] = useMovieCategoryDeleteMutation();
 
-      const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_URI}/movies/movie_category/?${qs}`,
-        {
-          method: selected ? "POST" : "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-        }
-      );
-      const data: MovieType = await response.json();
+
+  const onUpdateCategory = async (id: string, selected: boolean) => {
+   if (movieId) {
+      const trigger = selected
+        ? movieCategoryAddTrigger
+        : movieCategoryDeleteTrigger;
 
       const categoryName = categories?.filter(
         (category) => category.id === +id
       )[0].name;
 
-     switch (response.status) {
-        case 200:
-          formik.setStatus(
-            `Successfully ${
-              selected ? "added" : "removed"
-            } category ${categoryName} ${selected ? "to" : "from"} ${data.name}`
-          );
-          break;
+      try {
+        const data: MovieType = await trigger({
+          categoryId: id,
+          movieId,
+        }).unwrap();
 
-        case 404:
-          formik.setStatus("Server could not find category");
-          break;
+        formik.setStatus(
+          `Successfully ${
+            selected ? "added" : "removed"
+          } category ${categoryName} ${selected ? "to" : "from"} ${data.name}`
+        );
+      } catch (error) {
+        const { status, data } = error as FetchBaseQueryError;
 
-        case 409:
-          formik.setStatus(`Category ${categoryName} is already selected`);
-          break;
+        formik.setFieldValue(
+          "movieCategories",
+          movie?.categories.map((category) => category.id.toString())
+        );
 
-        default:
-          formik.setStatus("Unknown server error");
-          break;
+        if (status !== 422) {
+          const {
+            detail: { message },
+          } = data as HTTPExceptionType;
+
+          formik.setStatus(message ? message : "Unknown server error");
+        }
       }
     }
   };
-
   return (
     <MovieSection title="Categories">
       <div className="h-72">
         {isLoading ? (
           <Loading />
         ) : (
-          <div className="gap-1 grid grid-cols-3 overflow-y-auto">
-            {categories?.map((category) => (
-              <div key={category.id}>
-                <label>
-                  <Field
-                    type="checkbox"
-                    name="movieCategories"
-                    value={category.id.toString()}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      formik.handleChange(e);
-                      onUpdateCategory(e.target.value, e.target.checked);
-                    }}
-                  />{" "}
-                  {category.name}
-                </label>
-              </div>
-            ))}
-          </div>
+          <fieldset disabled={!movieId}>
+            <div className="gap-1 grid grid-cols-3 overflow-y-auto">
+              {categories?.map((category) => (
+                <div key={category.id}>
+                  <label>
+                    <Field
+                      type="checkbox"
+                      name="movieCategories"
+                      value={category.id.toString()}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        formik.handleChange(e);
+                        onUpdateCategory(e.target.value, e.target.checked);
+                      }}
+                    />{" "}
+                    {category.name}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </fieldset>
         )}
       </div>
     </MovieSection>

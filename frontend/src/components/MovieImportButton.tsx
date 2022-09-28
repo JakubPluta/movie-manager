@@ -1,29 +1,36 @@
 import { useState } from "react";
+import { FetchBaseQueryError } from "@reduxjs/toolkit/dist/query";
 
+import { useMoviesImportMutation } from "../state/MovieManagerApi";
+
+import { HTTPExceptionType, MovieFileType } from "../types/api";
 const MovieImportButton = () => {
-  const [importStatus, setImportStatus] = useState("");
+   const [importStatus, setImportStatus] = useState("");
+  const [trigger] = useMoviesImportMutation();
 
   const onImportMovies = async () => {
-    const response = await fetch(`${process.env.REACT_APP_BACKEND_URI}/movies`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    const data = await response.json();
-
-    if (response.ok) {
+    try {
+      const data: MovieFileType[] = await trigger().unwrap();
       const count = data.length;
 
       if (count === 0) {
         setImportStatus("No movies were available for import");
       } else {
-        setImportStatus(`Imported ${count} movie files`);
+        setImportStatus(`Imported ${count} movie file${count > 1 ? "s" : ""}`);
       }
-    } else {
-      setImportStatus(data.detail.message);
+    } catch (error) {
+      const { status, data } = error as FetchBaseQueryError;
+
+      if (status !== 422) {
+        const {
+          detail: { message },
+        } = data as HTTPExceptionType;
+
+        setImportStatus(message ? message : "Unknown server error");
+      }
     }
   };
+
 
   return (
     <div className="border border-black p-4 text-center mx-auto w-max">

@@ -11,22 +11,15 @@ import { setMovieId } from "../state/SelectBoxSlice";
 
 import { MainPageFormValuesType } from "../types/form";
 
-
 const MovieList = () => {
  const { setFieldValue, setStatus } =
     useFormikContext<MainPageFormValuesType>();
 
-  const reduxDispatch = useAppDispatch();
+  const dispatch = useAppDispatch();
   const movieId = useAppSelector((state) => state.selectBox.movieId);
-  const { data: movie } = useMovieQuery(movieId ? movieId : skipToken);
-  const { data: movies, isLoading, isSuccess } = useMoviesQuery();
 
-
-  useEffect(() => {
-    if (movieId === "" && isSuccess && movies) {
-      movies.length > 0 && reduxDispatch(setMovieId(movies[0].id.toString()));
-    }
-  }, [movieId, movies, isSuccess, reduxDispatch]);
+  const { data: movie } = useMovieQuery(movieId ?? skipToken);
+  const { data: movies, isLoading } = useMoviesQuery();
 
 
   useEffect(() => {
@@ -51,24 +44,28 @@ const MovieList = () => {
 
         setFieldValue(
           "movieCategories",
-          movie.categories.map((category) => category.id.toString())
+          movie.categories?.map((category) => category.id.toString())
         );
       }
     })();
   }, [movie, setStatus, setFieldValue]);
 
+
   return (
-    <MovieSection title="Movie List">
-      {isLoading  ? (
+     <MovieSection title="Movie List">
+      {isLoading ? (
         <div className="h-64">
           <Loading />
         </div>
       ) : (
-           <select
+        <select
           className="h-64 w-full"
           size={10}
-          defaultValue={movies && movies[0]?.id}
-          onChange={(e) => reduxDispatch(setMovieId(e.target.value))}
+          defaultValue={movieId}
+          onChange={(e) => {
+            dispatch(setMovieId(e.target.value));
+            setStatus("");
+          }}
         >
           {movies?.map((movie) => (
             <option key={movie.id} value={movie.id}>
