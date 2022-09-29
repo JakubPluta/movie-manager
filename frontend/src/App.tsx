@@ -7,12 +7,10 @@ import MainPage from "./pages/MainPage";
 import Container from "./components/Container";
 import NavBar from "./components/NavBar";
 
-import { store } from "./state/store";
 
 function App() {
   return (
     <BrowserRouter>
-      <Provider store = {store}>
         <Container>
           <NavBar />
           <Routes>
@@ -24,8 +22,6 @@ function App() {
             <Route path="/admin" element={<AdminPage />} />
           </Routes>
         </Container>
-
-        </Provider>
     </BrowserRouter>
   );
 }
